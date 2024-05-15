@@ -1,36 +1,31 @@
 import { FunctionComponent, useEffect } from "react";
-import { useLocation } from "react-router-dom";
 import { SApiService } from "../../services/app.service";
 import VegaChart from "../vega/vega";
+import { userDetailsStore } from "../../store/userStore";
 
 const Visualisation: FunctionComponent = () => {
-  const location = useLocation();
-  const { state } = location;
-  const { username } = state;
+  const userDetails = userDetailsStore((state) => state.userDetails);
   useEffect(() => {
-    if (username) {
-      SApiService.visualise({ username: username })
+    if (userDetails?.username) {
+      SApiService.visualise({ username: userDetails.username })
         .then((res) => console.log(res))
         .catch((err) => {
           console.log(err);
         });
     }
-  }, [username]);
+  }, [userDetails]);
+
   const chartData = [
-    {
-      name: "table",
-      values: [
-        { category: "A", amount: 28 },
-        { category: "B", amount: 55 },
-        { category: "C", amount: 43 },
-        { category: "D", amount: 91 },
-        { category: "E", amount: 81 },
-        { category: "F", amount: 53 },
-        { category: "G", amount: 19 },
-        { category: "H", amount: 87 },
-      ],
-    },
+    { category: "A", amount: 28 },
+    { category: "B", amount: 55 },
+    { category: "C", amount: 43 },
+    { category: "D", amount: 91 },
+    { category: "E", amount: 81 },
+    { category: "F", amount: 53 },
+    { category: "G", amount: 19 },
+    { category: "H", amount: 87 },
   ];
+
   const vegaSpecWithoutData = {
     $schema: "https://vega.github.io/schema/vega/v5.json",
     width: 400,
@@ -40,16 +35,6 @@ const Visualisation: FunctionComponent = () => {
     data: [
       {
         name: "table",
-        values: [
-          { category: "A", amount: 28 },
-          { category: "B", amount: 55 },
-          { category: "C", amount: 43 },
-          { category: "D", amount: 91 },
-          { category: "E", amount: 81 },
-          { category: "F", amount: 53 },
-          { category: "G", amount: 19 },
-          { category: "H", amount: 87 },
-        ],
       },
     ],
 
@@ -129,9 +114,8 @@ const Visualisation: FunctionComponent = () => {
 
   return (
     <div>
-      <div className="home-title">Visualisation Page for {username}</div>
+      <div className="home-title">Visualisation Page for {"username"}</div>
       <VegaChart spec={vegaSpecWithoutData} data={chartData} />
-      {/* To be changed above because currently it takes spec with data only.  */}
     </div>
   );
 };

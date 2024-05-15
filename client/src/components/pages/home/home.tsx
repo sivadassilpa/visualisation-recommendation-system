@@ -1,16 +1,19 @@
 // src/pages/Home.tsx
-import React from "react";
+import { FunctionComponent } from "react";
 import PersonIcon from "@mui/icons-material/Person";
 import "./home.scss";
 import Card from "@mui/material/Card/Card";
 import { CardContent, Typography, Button } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+import { userDetailsStore } from "../../store/userStore";
 
-const Home: React.FC = () => {
+const Home: FunctionComponent = () => {
+  const setUserDetails = userDetailsStore((state) => state.setUserDetails);
   const navigate = useNavigate();
   const handleVisualisationNavigation = (username: String) => {
     console.log(username);
-    navigate("/visualisation", { state: { username: username } });
+    setUserDetails({ username: username });
+    navigate("/questionnaires");
   };
   return (
     <>

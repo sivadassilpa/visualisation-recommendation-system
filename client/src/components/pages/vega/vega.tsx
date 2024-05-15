@@ -38,7 +38,7 @@ const VegaChart: React.FC<VegaChartProps> = ({ spec, data }) => {
     async function updateData() {
       if (viewRef.current) {
         viewRef.current.change(
-          "data",
+          "table", // Update the 'table' dataset instead of 'data'
           vega
             .changeset()
             .remove(() => true)
