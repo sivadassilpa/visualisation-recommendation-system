@@ -1,7 +1,7 @@
 import psycopg2
 
 DB_NAME = 'visualisation'
-DB_USER = 'silpasivadas'
+DB_USER = 'postgres'
 DB_PASSWORD = 'Silpa@123'
 DB_HOST = 'localhost'
 DB_PORT = '5432'

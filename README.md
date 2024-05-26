@@ -6,6 +6,8 @@
 2. Run the following command to start the server:
 
 ```
+pip install auto-sklearn
+
 python app.py
 ```
 

@@ -1,4 +1,4 @@
-import { FunctionComponent, useRef, useState } from "react";
+import { FunctionComponent, useEffect, useRef, useState } from "react";
 import "./fileUpload.scss";
 import {
   Button,
@@ -12,11 +12,12 @@ import {
   OutlinedInput,
   Select,
 } from "@mui/material";
-import PersonIcon from "@mui/icons-material/Person";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import { userDetailsStore } from "../../store/userStore";
 import * as XLSX from "xlsx"; // Import xlsx library
 import { useNavigate } from "react-router-dom";
+import { SApiService } from "../../services/app.service";
+import DataContextQuestionaire from "../questionnaires/dataContextQuestionaire";
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -36,6 +37,8 @@ const FileUpload: FunctionComponent = () => {
   const [columnNames, setColumnNames] = useState<string[]>([]);
   const [errorMessage, setErrorMessage] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const allColumnsSelected =
+    columnNames.length > 0 && selectedColumns.length === columnNames.length;
   const navigate = useNavigate();
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -63,15 +66,7 @@ const FileUpload: FunctionComponent = () => {
       fileInputRef.current.click();
     }
   };
-  const handleSubmit = () => {
-    if (selectedFile) {
-      // Handle file upload here
-      console.log("File uploaded:", selectedFile.name);
-      navigate("/visualisation");
-    } else {
-      console.error("No file selected.");
-    }
-  };
+
   const parseFile = (file: File) => {
     const reader = new FileReader();
     reader.onload = (event) => {
@@ -92,24 +87,28 @@ const FileUpload: FunctionComponent = () => {
     setSelectedColumns(event.target.value as string[]);
   };
 
+  const handleSelectAllClick = () => {
+    if (allColumnsSelected) {
+      setSelectedColumns([]);
+    } else {
+      setSelectedColumns(columnNames);
+    }
+  };
+  useEffect(() => {
+    handleSelectAllClick();
+  }, [columnNames]);
+
   return (
     <Grid container className="file-upload-main-container">
-      {/* <Grid item container xs={12} className="header">
-        <Grid item xs={6} className="username">
-          <PersonIcon className="icon" />
-          {userDetails?.username}
-        </Grid>
-        <Grid item xs={6} className="logout">
-          Logout
-        </Grid>
-      </Grid> */}
-      {/* <Grid item xs={12}>
-        <hr />
-      </Grid> */}
-      <Grid item xs={12}>
+      <Grid item xs={12} style={{ height: "5vh" }}>
         <h1>File Upload</h1>
       </Grid>
-      <Grid item xs={12} className="file-upload-container">
+      <Grid
+        item
+        xs={12}
+        className="file-upload-container"
+        style={{ height: "20vh" }}
+      >
         <Grid item xs={6} className="file-upload">
           <Grid item xs={12} className="file-upload-title">
             Please select a file
@@ -150,6 +149,14 @@ const FileUpload: FunctionComponent = () => {
               <FormControl sx={{ m: 1, width: 300 }}>
                 <InputLabel id="demo-multiple-checkbox-label">Tag</InputLabel>
                 <Select
+                  sx={{
+                    ".MuiSelect-select": {
+                      paddingTop: "8px",
+                      paddingBottom: "8px",
+                      minHeight: "auto",
+                      fontSize: "12px", // Adjust the font size as needed
+                    },
+                  }}
                   labelId="demo-multiple-checkbox-label"
                   id="demo-multiple-checkbox"
                   multiple
@@ -159,6 +166,17 @@ const FileUpload: FunctionComponent = () => {
                   renderValue={(selected) => selected.join(", ")}
                   MenuProps={MenuProps}
                 >
+                  <MenuItem>
+                    <Checkbox
+                      checked={allColumnsSelected}
+                      indeterminate={
+                        selectedColumns.length > 0 &&
+                        selectedColumns.length < columnNames.length
+                      }
+                      onChange={handleSelectAllClick}
+                    />
+                    <ListItemText primary="Select All" />
+                  </MenuItem>
                   {columnNames.map((columnName, index) => (
                     <MenuItem key={index} value={columnName}>
                       <Checkbox
@@ -171,18 +189,38 @@ const FileUpload: FunctionComponent = () => {
               </FormControl>
             )}
           </Grid>
-          <Grid item xs={12}>
-            <Button
-              variant="contained"
-              className="upload-button"
-              onClick={handleSubmit}
-              disabled={!selectedFile}
-            >
-              Generate Visualisation
-            </Button>
-          </Grid>
         </Grid>
       </Grid>
+      {selectedFile && (
+        <Grid
+          item
+          xs={12}
+          className="questionaire-container"
+          style={{ height: "50vh" }}
+        >
+          <h3>Questionaire</h3>
+          <h5>
+            The Questionnaire helps understand the purpose of data
+            visualization. Participation is optional.
+          </h5>
+          <DataContextQuestionaire
+            selectedFile={selectedFile}
+            selectedColumns={selectedColumns}
+          ></DataContextQuestionaire>
+        </Grid>
+      )}
+      {/* <Grid item xs={12} style={{ height: "10vh" }} className="generate-button">
+        {selectedFile && (
+          <Button
+            variant="contained"
+            className="upload-button"
+            onClick={handleSubmit}
+            disabled={!selectedFile}
+          >
+            Generate Visualisation
+          </Button>
+        )}
+      </Grid> */}
     </Grid>
   );
 };

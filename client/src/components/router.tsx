@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import Home from "./pages/home/home";
 import Visualisation from "./pages/visualisation/visualisation";
 import FileUpload from "./pages/fileUpload/fileUpload";
-import Questionnaire from "./pages/questionnaires/questionnaires";
+import Questionnaire from "./pages/questionnaires/userLevelQuestionnaires";
 
 const RouterComponent: FunctionComponent = () => {
   return (

@@ -7,11 +7,11 @@ const Visualisation: FunctionComponent = () => {
   const userDetails = userDetailsStore((state) => state.userDetails);
   useEffect(() => {
     if (userDetails?.username) {
-      SApiService.visualise({ username: userDetails.username })
-        .then((res) => console.log(res))
-        .catch((err) => {
-          console.log(err);
-        });
+      // SApiService.visualise({ username: userDetails.username, password:userDetails.password})
+      //   .then((res) => console.log(res))
+      //   .catch((err) => {
+      //     console.log(err);
+      //   });
     }
   }, [userDetails]);
 

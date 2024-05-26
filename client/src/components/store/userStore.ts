@@ -1,6 +1,8 @@
 import { create } from "zustand";
 interface IUserDetails {
-  username: String;
+  username: string;
+  password: string | undefined;
+  userId?: number | undefined;
 }
 
 interface UserDetailsState {

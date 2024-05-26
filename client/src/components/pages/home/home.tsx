@@ -6,14 +6,32 @@ import Card from "@mui/material/Card/Card";
 import { CardContent, Typography, Button } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { userDetailsStore } from "../../store/userStore";
+import { SApiService } from "../../services/app.service";
 
 const Home: FunctionComponent = () => {
   const setUserDetails = userDetailsStore((state) => state.setUserDetails);
   const navigate = useNavigate();
-  const handleVisualisationNavigation = (username: String) => {
+  const handleVisualisationNavigation = (username: string) => {
     console.log(username);
-    setUserDetails({ username: username });
-    navigate("/questionnaires");
+
+    SApiService.login({ username: username, password: username + "@123" })
+      .then((res) => {
+        console.log(res.data);
+        const userProfile = res.data.userProfile;
+        setUserDetails({
+          username: username,
+          password: username + "@123",
+          userId: res.data.userId,
+        }); // donot store password
+        if (!userProfile) {
+          navigate("/questionnaires");
+        } else {
+          navigate("/fileUpload");
+        }
+      })
+      .catch((err) => {
+        console.log(err);
+      });
   };
   return (
     <>
@@ -31,7 +49,7 @@ const Home: FunctionComponent = () => {
             <Button
               variant="contained"
               color="info"
-              onClick={() => handleVisualisationNavigation("User 1")}
+              onClick={() => handleVisualisationNavigation("User1")}
             >
               Go to Visualisation
             </Button>
@@ -46,7 +64,7 @@ const Home: FunctionComponent = () => {
             <Button
               variant="contained"
               color="warning"
-              onClick={() => handleVisualisationNavigation("User 2")}
+              onClick={() => handleVisualisationNavigation("User2")}
             >
               Go to Visualisation
             </Button>
@@ -61,7 +79,7 @@ const Home: FunctionComponent = () => {
             <Button
               variant="contained"
               color="success"
-              onClick={() => handleVisualisationNavigation("User 3")}
+              onClick={() => handleVisualisationNavigation("User3")}
             >
               Go to Visualisation
             </Button>
