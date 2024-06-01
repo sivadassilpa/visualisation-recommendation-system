@@ -1,0 +1,7 @@
+server/__pycache__/
+server/context/__pycache__/
+server/factories/__pycache__/
+server/routes/__pycache__/
+server/ontologies/__pycache__/
+server/utils/__pycache__/
+server/lookup_tables/__pycache__/
