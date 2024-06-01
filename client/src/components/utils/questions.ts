@@ -1,3 +1,5 @@
+// This page need to be moved to backend
+
 const countryList = require("country-list");
 export interface IQuestion {
   title: string;

@@ -15,7 +15,6 @@ export const SApiService = {
     selectedColumns: string[];
   }) => {
     try {
-      console.log("uploading");
       const formData = new FormData();
       formData.append("file", data.selectedFile);
       formData.append("columns", data.selectedColumns.join(","));
@@ -40,12 +39,14 @@ export const SApiService = {
       throw error;
     }
   },
+
   updateUserProfile: async (data: {
     userId: number;
     userProfile: IQuestionaireResponse[];
   }): Promise<any> => {
     return axios.post(`${API_BASE_URL}/update-user-profile`, data);
   },
+
   updateDataContext: async (data: {
     userId: number;
     userProfile: IQuestionaireResponse[];

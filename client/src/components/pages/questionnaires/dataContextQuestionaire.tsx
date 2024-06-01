@@ -6,19 +6,23 @@ import { FormControl, Select, MenuItem, Button, Grid } from "@mui/material";
 import _ from "lodash";
 import { SApiService } from "../../services/app.service";
 import { userDetailsStore } from "../../store/userStore";
-interface IDataContextComponentProps {
+
+export interface IDataContextComponentProps {
   selectedFile: File;
   selectedColumns: string[];
 }
+
 export interface IQuestionaireResponse {
   title: string;
   optionSelected: string;
 }
+
 const defaultDataContextAnswers: IQuestionaireResponse[] =
   dataLevelQuestions.map((question) => ({
     title: question.title,
     optionSelected: "I prefer not to answer", // Default option: "Not familiar at all"
   }));
+
 const DataContextQuestionaire: FunctionComponent<IDataContextComponentProps> = (
   props
 ) => {
@@ -28,11 +32,13 @@ const DataContextQuestionaire: FunctionComponent<IDataContextComponentProps> = (
     _.cloneDeep(defaultDataContextAnswers)
   );
   const navigate = useNavigate();
+
   const handleOptionSelect = (index: number, option: string) => {
     const newAnswers = [...answers];
     newAnswers[index].optionSelected = option;
     setAnswers(newAnswers);
   };
+
   const handleSubmit = (isSkip: boolean) => {
     if (!selectedFile) {
       console.error("No file selected.");
@@ -41,9 +47,7 @@ const DataContextQuestionaire: FunctionComponent<IDataContextComponentProps> = (
 
     if (isSkip) {
       setAnswers(_.cloneDeep(defaultDataContextAnswers));
-      console.log("skipping..."); // ignore and go to fileupload
     }
-    console.log("after skip...");
     if (userDetails?.userId) {
       const dataProfileList = isSkip ? defaultDataContextAnswers : answers;
       const dataProfileDict = _.reduce(
@@ -61,11 +65,9 @@ const DataContextQuestionaire: FunctionComponent<IDataContextComponentProps> = (
         selectedFile: selectedFile,
         selectedColumns: selectedColumns,
       };
-      console.log(data);
       SApiService.uploadFile(data)
         .then((res) => {
-          console.log(res);
-          //navigate('/visualisation')
+          navigate("/visualisation", { state: res });
         })
         .catch((err) => {
           console.log(err);

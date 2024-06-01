@@ -4,7 +4,8 @@ import os
 from database import connect_to_db
 import json
 
-from utils.profiler import profile_data
+from utils.responseParser import responseParser
+from utils.profiler import create_vega_chart, extract_profile, profile_data
 
 fileUpload_bp = Blueprint("fileUpload", __name__)
 
@@ -97,7 +98,6 @@ def update_data_profile(userId, filename, dataProfile):
 @fileUpload_bp.route("/uploadFile", methods=["POST"])
 def upload_file():
     # Improvements : Saving could be avoided and object file could be directly used.
-    print("here")
     if "file" not in request.files:
         return jsonify({"error": "No file part in the request"}), 400
 
@@ -118,9 +118,12 @@ def upload_file():
             data_profile = None
         print("dataProfile", user_id, data_profile)
 
+        # Save uploaded file to uploads/filename
         filename = secure_filename(file.filename)
         file_path = os.path.join(current_app.config["UPLOAD_FOLDER"], filename)
         file.save(file_path)
+
+        # Metadata Extraction -> DataProfiling
         profile = profile_data(file_path)
         print(profile)
         if user_id:
@@ -130,6 +133,15 @@ def upload_file():
         else:
             return jsonify({"error": "No columns selected"}), 400
 
+        # Pending =>Save to database
+        selected_data_profile = extract_profile(profile, selected_columns)
+        # extract the metadat for selected columns
+        # Find the matching rules
+
+        rules = find_matching_rule(data_profile, selected_data_profile)
+        vega_spec = create_vega_chart(rules[0]["action"])
+        # data_profile is the Questionnaire response and profile is the metadata profiled
+
         # Handle file processing and column data as needed
         # For example, you can read the file and process it here
 
@@ -138,11 +150,38 @@ def upload_file():
                 {
                     "message": "File uploaded successfully",
                     "filename": filename,
-                    "columns": selected_columns,
-                    "profile": profile,
+                    "vegaspec": vega_spec,
                 }
             ),
             200,
         )
     else:
         return jsonify({"error": "File type not allowed"}), 400
+
+
+def find_matching_rule(questionnaire, data_profile):
+    rules = []
+    try:
+        print("inside find_matching_rule", questionnaire, data_profile)
+        for key, value in data_profile["data_types"].items():
+            # information_types = list(data_profile["data_types"].values())
+            dtype = value
+            objective = "Understanding general trends"
+            info_type = "Numbers" if dtype in ["int64", "float64"] else "object"
+            condition = (
+                f"objective = '{objective}' AND information_type = '{info_type}'"
+            )
+
+            # Query the ruleset
+            query = "SELECT * FROM rulesets WHERE condition = %s LIMIT 1"
+            cursor.execute(query, (condition,))
+            rule = cursor.fetchone()
+            rule_dict = responseParser(cursor.description, rule)
+            if rule:
+                rules.append(
+                    {"column": key, "rule": rule_dict, "action": rule_dict["action"]}
+                )
+
+        return rules
+    except Exception as e:
+        print(e)

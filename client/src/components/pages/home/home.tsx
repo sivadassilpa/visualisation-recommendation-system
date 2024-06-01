@@ -1,4 +1,3 @@
-// src/pages/Home.tsx
 import { FunctionComponent } from "react";
 import PersonIcon from "@mui/icons-material/Person";
 import "./home.scss";
@@ -12,11 +11,8 @@ const Home: FunctionComponent = () => {
   const setUserDetails = userDetailsStore((state) => state.setUserDetails);
   const navigate = useNavigate();
   const handleVisualisationNavigation = (username: string) => {
-    console.log(username);
-
     SApiService.login({ username: username, password: username + "@123" })
       .then((res) => {
-        console.log(res.data);
         const userProfile = res.data.userProfile;
         setUserDetails({
           username: username,

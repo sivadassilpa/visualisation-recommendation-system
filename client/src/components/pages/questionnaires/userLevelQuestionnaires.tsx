@@ -6,16 +6,19 @@ import { FormControl, Select, MenuItem, Button } from "@mui/material";
 import _ from "lodash";
 import { SApiService } from "../../services/app.service";
 import { userDetailsStore } from "../../store/userStore";
+
 export interface IQuestionaireResponse {
   title: string;
   optionSelected: string;
 }
+
 const defaultUserLevelAnswers: IQuestionaireResponse[] = userLevelQuestions.map(
   (question) => ({
     title: question.title,
     optionSelected: "I prefer not to answer", // Default option: "Not familiar at all"
   })
 );
+
 const UserLevelQuestionnaires: FunctionComponent = () => {
   const userDetails = userDetailsStore((state) => state.userDetails);
   const [answers, setAnswers] = useState<IQuestionaireResponse[]>(
@@ -31,9 +34,7 @@ const UserLevelQuestionnaires: FunctionComponent = () => {
   const handleSubmit = (isSkip: boolean) => {
     if (isSkip) {
       setAnswers(_.cloneDeep(defaultUserLevelAnswers));
-      console.log("skipping..."); // ignore and go to fileupload
     } else if (!_.isEqual(answers, defaultUserLevelAnswers)) {
-      console.log("different answers");
       if (userDetails?.userId) {
         const data = { userId: userDetails?.userId, userProfile: answers };
         SApiService.updateUserProfile(data);

@@ -1,6 +1,7 @@
 from flask import jsonify
 import pandas as pd
 import numpy as np
+from factories.visualization_factory import ChartFactory
 
 
 def profile_data(file_path):
@@ -65,6 +66,37 @@ def identify_categorical_variables(df):
             ):  # Adjust the threshold as needed
                 categorical_vars[column] = unique_values.to_dict()
     return categorical_vars
+
+
+def extract_profile(profile, selected_columns):
+    # Initialize the new profile dictionary with filtered values
+    new_profile = {
+        "shape": (profile["shape"][0], len(selected_columns)),
+        "data_types": {col: profile["data_types"][col] for col in selected_columns},
+        "summary_stats": {
+            col: profile["summary_stats"][col] for col in selected_columns
+        },
+        "missing_values": {
+            col: profile["missing_values"][col] for col in selected_columns
+        },
+        "unique_values": {
+            col: profile["unique_values"][col]
+            for col in selected_columns
+            if col in profile["unique_values"]
+        },
+        "categorical_vars": {
+            col: profile["categorical_vars"][col]
+            for col in selected_columns
+            if col in profile["categorical_vars"]
+        },
+    }
+    return new_profile
+
+
+def create_vega_chart(chart_type):
+    chart_ontology = ChartFactory.get_chart_ontology(chart_type)
+    vega_spec = chart_ontology.define()
+    return vega_spec
 
 
 # # Example usage:

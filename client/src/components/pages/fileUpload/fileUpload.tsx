@@ -1,7 +1,6 @@
 import { FunctionComponent, useEffect, useRef, useState } from "react";
 import "./fileUpload.scss";
 import {
-  Button,
   Checkbox,
   FormControl,
   Grid,
@@ -13,10 +12,7 @@ import {
   Select,
 } from "@mui/material";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
-import { userDetailsStore } from "../../store/userStore";
 import * as XLSX from "xlsx"; // Import xlsx library
-import { useNavigate } from "react-router-dom";
-import { SApiService } from "../../services/app.service";
 import DataContextQuestionaire from "../questionnaires/dataContextQuestionaire";
 
 const ITEM_HEIGHT = 48;
@@ -31,7 +27,6 @@ const MenuProps = {
 };
 
 const FileUpload: FunctionComponent = () => {
-  const userDetails = userDetailsStore((state) => state.userDetails);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
   const [columnNames, setColumnNames] = useState<string[]>([]);
@@ -39,10 +34,8 @@ const FileUpload: FunctionComponent = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const allColumnsSelected =
     columnNames.length > 0 && selectedColumns.length === columnNames.length;
-  const navigate = useNavigate();
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    console.log(file);
     if (file) {
       if (
         file.type === "text/csv" ||
@@ -61,7 +54,6 @@ const FileUpload: FunctionComponent = () => {
   };
 
   const handleUploadButtonClick = () => {
-    // Trigger the click event of the hidden file input
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
@@ -83,6 +75,7 @@ const FileUpload: FunctionComponent = () => {
     };
     reader.readAsArrayBuffer(file);
   };
+
   const handleColumnChange = (event: any) => {
     setSelectedColumns(event.target.value as string[]);
   };
@@ -94,6 +87,7 @@ const FileUpload: FunctionComponent = () => {
       setSelectedColumns(columnNames);
     }
   };
+
   useEffect(() => {
     handleSelectAllClick();
   }, [columnNames]);
@@ -209,18 +203,6 @@ const FileUpload: FunctionComponent = () => {
           ></DataContextQuestionaire>
         </Grid>
       )}
-      {/* <Grid item xs={12} style={{ height: "10vh" }} className="generate-button">
-        {selectedFile && (
-          <Button
-            variant="contained"
-            className="upload-button"
-            onClick={handleSubmit}
-            disabled={!selectedFile}
-          >
-            Generate Visualisation
-          </Button>
-        )}
-      </Grid> */}
     </Grid>
   );
 };

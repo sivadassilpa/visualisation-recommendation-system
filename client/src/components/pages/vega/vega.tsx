@@ -1,16 +1,14 @@
 import React, { useEffect, useRef } from "react";
 import * as vega from "vega";
 
-interface VegaChartProps {
-  spec: object; // The Vega specification without the data
-  data: object[]; // The data for the chart
+export interface VegaChartProps {
+  spec: object;
 }
 
-const VegaChart: React.FC<VegaChartProps> = ({ spec, data }) => {
+const VegaChart: React.FC<VegaChartProps> = ({ spec }) => {
   const chartRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<vega.View>();
 
-  // Initialize the chart
   useEffect(() => {
     async function createView() {
       try {
@@ -33,23 +31,15 @@ const VegaChart: React.FC<VegaChartProps> = ({ spec, data }) => {
     }
   }, [spec]);
 
-  // Update data when it changes
   useEffect(() => {
-    async function updateData() {
+    async function updateView() {
       if (viewRef.current) {
-        viewRef.current.change(
-          "table", // Update the 'table' dataset instead of 'data'
-          vega
-            .changeset()
-            .remove(() => true)
-            .insert(data)
-        );
         await viewRef.current.runAsync();
       }
     }
 
-    updateData();
-  }, [data]);
+    updateView();
+  }, [spec]);
 
   return <div ref={chartRef} />;
 };

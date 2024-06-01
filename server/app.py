@@ -11,8 +11,8 @@ app = Flask(__name__)
 CORS(app)
 
 # Configure upload folder
-UPLOAD_FOLDER = 'uploads'
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+UPLOAD_FOLDER = "uploads"
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
@@ -20,26 +20,30 @@ if not os.path.exists(UPLOAD_FOLDER):
 conn = connect_to_db()
 cursor = conn.cursor()
 
-@app.route('/')
+
+@app.route("/")
 def index():
     return jsonify({"message": "Welcome to your Flask API!"})
+
 
 @app.teardown_appcontext
 def teardown_db(exception):
     close_connection(conn, cursor)
     print("Connection to PostgreSQL closed")
 
+
 from routes.login import login_bp
 from routes.register import register_bp
 from routes.visualise import visualise_bp
-from routes.fileUpload import fileUpload_bp
+from routes.fileUpload import fileUpload_bp, find_matching_rule
 
 app.register_blueprint(login_bp)
 app.register_blueprint(register_bp)
 app.register_blueprint(visualise_bp)
 app.register_blueprint(fileUpload_bp)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Test onotlogy
     # test()
+
     app.run(debug=True)
