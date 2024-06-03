@@ -4,52 +4,38 @@ from database import connect_to_db
 from utils.profiler import profile_data
 from context.user_profile import UserProfile
 from context.data_context import DataContext
-visualise_bp = Blueprint('visualise', __name__)
+
+visualise_bp = Blueprint("visualise", __name__)
 
 
 conn = connect_to_db()
 cursor = conn.cursor()
 
-@visualise_bp.route('/visualise', methods=['POST'])
-def visualise():
-    username = request.json.get('username')
 
-    # # Retrieve user from the database
-    # user = cursor.execute("SELECT * FROM users WHERE username = %s", (username,))
-    # user = cursor.fetchone()
-
-    # if not user or not check_password_hash(user['password_hash'], password):
-    #     return jsonify({'error': 'Invalid username or password'}), 401
-
-    # # Implement your session management or token generation logic here
-    profile = profile_data()
-    return jsonify({'message': username})
-
-@visualise_bp.route('/user-profile', methods=['POST'])
+@visualise_bp.route("/user-profile", methods=["POST"])
 def userProfile():
     user_profiles = {}
     data = request.json
-    user_id = data['username']
+    user_id = data["username"]
     user_profiles[user_id] = UserProfile(
-        data['familiarity'],
-        data['profession'],
-        data['interest'] 
+        data["familiarity"], data["profession"], data["interest"]
     ).to_dict()
-    #save it to db
+    # save it to db
     return jsonify({"message": "User profile saved"}), 201
 
-@visualise_bp.route('/data-profile', methods=['POST'])
+
+@visualise_bp.route("/data-profile", methods=["POST"])
 def dataProfile():
     data_contexts = {}
     data = request.json
-    data_id = data['data_id']
+    data_id = data["data_id"]
     data_contexts[data_id] = DataContext(
-        data['objective'],
-        data['data_type'],
-        data['patterns'],
-        data['comparisons'],
-        data['color_preferences'],
-        data['usage']
+        data["objective"],
+        data["data_type"],
+        data["patterns"],
+        data["comparisons"],
+        data["color_preferences"],
+        data["usage"],
     ).to_dict()
-      #save it to db
+    # save it to db
     return jsonify({"message": "Data context saved"}), 201

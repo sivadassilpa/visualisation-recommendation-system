@@ -5,15 +5,10 @@ from factories.visualization_factory import ChartFactory
 
 
 def profile_data(file_path):
-    # Load the dataset
     df = pd.read_csv(file_path)
-
-    # Get dataset shape
-
     df = identify_data_type(df)
     df = df.infer_objects()
     shape = df.shape
-    # Get data types
     data_types = df.dtypes.apply(lambda x: str(x)).to_dict()
 
     # Get summary statistics

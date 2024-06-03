@@ -142,9 +142,6 @@ def upload_file():
         vega_spec = create_vega_chart(rules[0]["action"])
         # data_profile is the Questionnaire response and profile is the metadata profiled
 
-        # Handle file processing and column data as needed
-        # For example, you can read the file and process it here
-
         return (
             jsonify(
                 {
