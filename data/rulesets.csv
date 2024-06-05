@@ -1,0 +1,4 @@
+id,rule,description,condition,action
+3,Group Comparison Stacked Bar Chart,"For group comparison, suggest a stacked bar chart.",group_comparison = true,Bar Chart
+1,General Trends Line Chart,"For understanding general trends, suggest a line chart.",objective = 'Understanding general trends' AND information_type = 'Numbers',Line Chart
+2,Trend Analysis Line Chart,"For tracking changes over time, suggest a line chart.",min_columns = 2 AND objective = 'Tracking changes over time' AND  information_type = 'Numbers',Line Chart
