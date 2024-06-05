@@ -1,4 +1,4 @@
-from ontologies.chart_ontology import BarChartOntology, LineChartOntology
+from backend.ontologies.chart_ontology import BarChartOntology, LineChartOntology
 from abc import ABC, abstractmethod
 
 
