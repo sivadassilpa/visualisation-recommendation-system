@@ -1,7 +1,9 @@
-from factories.bar_chart_factory import BarChartFactory
-from factories.line_chart_factory import LineChartFactory
-from factories.pie_chart_factory import PieChartFactory
-from lookup_tables.graph_type_lookup import GRAPH_TYPE_LOOKUP
+from backend.factories.bar_chart_factory import BarChartFactory
+from backend.factories.line_chart_factory import LineChartFactory
+from backend.factories.pie_chart_factory import PieChartFactory
+from backend.lookup_tables.graph_type_lookup import GRAPH_TYPE_LOOKUP
+
+
 def create_ontology(graph_type):
     factory = GRAPH_TYPE_LOOKUP.get(graph_type)
     if factory:
@@ -12,6 +14,7 @@ def create_ontology(graph_type):
         }
     else:
         return {"error": "Unknown graph type"}
+
 
 # Example usage
 def test():

@@ -1,4 +1,4 @@
-from ontologies.ontology import Ontology
+from backend.ontologies.ontology import Ontology
 import pandas as pd
 
 
