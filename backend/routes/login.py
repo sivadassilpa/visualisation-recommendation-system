@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request
 from werkzeug.security import check_password_hash
-from database import connect_to_db
-from utils.responseParser import responseParser
+from backend.database import connect_to_db
+from backend.utils.responseParser import responseParser
 
 login_bp = Blueprint("login", __name__)
 

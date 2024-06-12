@@ -1,11 +1,11 @@
 from flask import Blueprint, request, jsonify, current_app
 from werkzeug.utils import secure_filename
 import os
-from database import connect_to_db
+from backend.database import connect_to_db
 import json
 
-from utils.responseParser import responseParser
-from utils.profiler import create_vega_chart, extract_profile, profile_data
+from backend.utils.responseParser import responseParser
+from backend.utils.profiler import create_vega_chart, extract_profile, profile_data
 
 fileUpload_bp = Blueprint("fileUpload", __name__)
 

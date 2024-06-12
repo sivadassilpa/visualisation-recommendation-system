@@ -1,7 +1,7 @@
 from flask import jsonify
 import pandas as pd
 import numpy as np
-from factories.visualization_factory import ChartFactory
+from backend.factories.visualization_factory import ChartFactory
 
 
 def profile_data(file_path):

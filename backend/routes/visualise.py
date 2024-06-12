@@ -1,9 +1,9 @@
 from flask import Blueprint, jsonify, request
 from werkzeug.security import check_password_hash
-from database import connect_to_db
-from utils.profiler import profile_data
-from context.user_profile import UserProfile
-from context.data_context import DataContext
+from backend.database import connect_to_db
+from backend.utils.profiler import profile_data
+from backend.context.user_profile import UserProfile
+from backend.context.data_context import DataContext
 
 visualise_bp = Blueprint("visualise", __name__)
 

@@ -32,10 +32,10 @@ def teardown_db(exception):
     print("Connection to PostgreSQL closed")
 
 
-from routes.login import login_bp
-from routes.register import register_bp
-from routes.visualise import visualise_bp
-from routes.fileUpload import fileUpload_bp, find_matching_rule
+from backend.routes.login import login_bp
+from backend.routes.register import register_bp
+from backend.routes.visualise import visualise_bp
+from backend.routes.fileUpload import fileUpload_bp, find_matching_rule
 
 app.register_blueprint(login_bp)
 app.register_blueprint(register_bp)
