@@ -4,8 +4,14 @@ import os
 from backend.database import connect_to_db
 import json
 
+from backend.utils.dataTypes import DataTypeCategory, type_mapping
 from backend.utils.responseParser import responseParser
-from backend.utils.profiler import create_vega_chart, extract_profile, profile_data
+from backend.utils.profiler import (
+    create_vega_chart,
+    extract_profile,
+    profile_data,
+    dataForSelectedColumns,
+)
 
 fileUpload_bp = Blueprint("fileUpload", __name__)
 
@@ -31,8 +37,6 @@ def update_data_profile(userId, filename, dataProfile):
 
         if existing_profile:
             # Update the existing user profile
-            print("existing profile : ", existing_profile)
-            # return
             try:
                 cursor.execute(
                     """
@@ -60,13 +64,6 @@ def update_data_profile(userId, filename, dataProfile):
                 print(e)
 
         else:
-            print("new profile : ", dataProfile)
-            print("dataProfile.objective", dataProfile["objective"])
-            print("dataProfile.objective", dataProfile["patternsinterest"])
-            print("dataProfile.objective", dataProfile["groupcomparison"])
-            print("dataProfile.objective", dataProfile["colorpreferences"])
-            print("dataProfile.objective", dataProfile["usecase"])
-            # return
             # Insert a new user profile
             try:
                 cursor.execute(
@@ -116,8 +113,6 @@ def upload_file():
             data_profile = {}
             user_id = None
             data_profile = None
-        print("dataProfile", user_id, data_profile)
-
         # Save uploaded file to uploads/filename
         filename = secure_filename(file.filename)
         file_path = os.path.join(current_app.config["UPLOAD_FOLDER"], filename)
@@ -125,7 +120,6 @@ def upload_file():
 
         # Metadata Extraction -> DataProfiling
         profile = profile_data(file_path)
-        print(profile)
         if user_id:
             update_data_profile(user_id, filename, data_profile)
         if columns:
@@ -139,7 +133,8 @@ def upload_file():
         # Find the matching rules
 
         rules = find_matching_rule(data_profile, selected_data_profile)
-        vega_spec = create_vega_chart(rules[0]["action"])
+        selectedData = dataForSelectedColumns(file_path, rules[0]["column"])
+        vega_spec = create_vega_chart(rules[0]["action"], selectedData)
         # data_profile is the Questionnaire response and profile is the metadata profiled
 
         return (
@@ -156,29 +151,68 @@ def upload_file():
         return jsonify({"error": "File type not allowed"}), 400
 
 
+# Function to find matching rule
 def find_matching_rule(questionnaire, data_profile):
     rules = []
     try:
-        print("inside find_matching_rule", questionnaire, data_profile)
-        for key, value in data_profile["data_types"].items():
-            # information_types = list(data_profile["data_types"].values())
-            dtype = value
-            objective = "Understanding general trends"
-            info_type = "Numbers" if dtype in ["int64", "float64"] else "object"
+        # Map data types
+        mapped_data_types = map_data_types(data_profile["data_types"])
+        print(mapped_data_types)
+
+        objective = "Understanding general trends"
+
+        # Loop through each data type category
+        for info_type, columns in mapped_data_types.items():
+            if not columns:
+                continue
+
+            # Construct the condition
             condition = (
-                f"objective = '{objective}' AND information_type = '{info_type}'"
+                f"objective = '{objective}' AND information_type = '{info_type.value}'"
             )
 
             # Query the ruleset
             query = "SELECT * FROM rulesets WHERE condition = %s LIMIT 1"
             cursor.execute(query, (condition,))
-            rule = cursor.fetchone()
-            rule_dict = responseParser(cursor.description, rule)
-            if rule:
+            rules_fetched = cursor.fetchall()  # Fetch all matching rules
+            for rule in rules_fetched:
+                rule_dict = responseParser(cursor.description, rule)
                 rules.append(
-                    {"column": key, "rule": rule_dict, "action": rule_dict["action"]}
+                    {
+                        "column": columns,
+                        "rule": rule_dict,
+                        "action": rule_dict["action"],
+                    }
                 )
 
         return rules
     except Exception as e:
         print(e)
+
+
+# Define the function to map data types of columns
+def map_data_types(data_types_dict):
+    # Initialize a dictionary to hold the mapped columns
+    mapped_columns = {
+        DataTypeCategory.NUMBERS: [],
+        DataTypeCategory.CATEGORIES: [],
+        DataTypeCategory.DATES: [],
+        DataTypeCategory.BOOLEAN: [],
+        DataTypeCategory.UNKNOWN: [],
+    }
+
+    # Extract and map data types
+    for column, dtype in data_types_dict.items():
+        dtype_str = str(dtype)
+        if dtype_str in type_mapping[DataTypeCategory.NUMBERS]:
+            mapped_columns[DataTypeCategory.NUMBERS].append(column)
+        elif dtype_str in type_mapping[DataTypeCategory.CATEGORIES]:
+            mapped_columns[DataTypeCategory.CATEGORIES].append(column)
+        elif dtype_str in type_mapping[DataTypeCategory.DATES]:
+            mapped_columns[DataTypeCategory.DATES].append(column)
+        elif dtype_str in type_mapping[DataTypeCategory.BOOLEAN]:
+            mapped_columns[DataTypeCategory.BOOLEAN].append(column)
+        else:
+            mapped_columns[DataTypeCategory.UNKNOWN].append(column)
+
+    return mapped_columns
