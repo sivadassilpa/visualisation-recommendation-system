@@ -2,157 +2,21 @@ from backend.ontologies.ontology import Ontology
 import pandas as pd
 
 
-# class LineChartOntology(Ontology):
-#     def define(self, data: pd.DataFrame):
-#         vega_spec = self.get_common_vega_spec()
-
-#         # Extract fields from data
-#         x_field = data.columns[0]  # Assuming the first column is x-axis
-#         y_field = data.columns[1]  # Assuming the second column is y-axis
-#         category_field = (
-#             data.columns[2] if len(data.columns) > 2 else None
-#         )
-#         # Assuming the third column is category
-
-#         # Convert DataFrame to dictionary for Vega
-#         values = data.to_dict(orient="records")
-
-#         # Determine if the category field is necessary
-#         if category_field and data[category_field].nunique() > 1:
-#             groupby_category = True
-#         else:
-#             groupby_category = False
-#             category_field = None  # Remove the category field if not needed
-
-#         # Update the vega_spec with dynamic data
-#         vega_spec.update(
-#             {
-#                 "data": [
-#                     {
-#                         "name": "table",
-#                         "values": values,
-#                     }
-#                 ],
-#                 "scales": [
-#                     {
-#                         "name": "x",
-#                         "type": "point",
-#                         "range": "width",
-#                         "domain": {"data": "table", "field": x_field},
-#                     },
-#                     {
-#                         "name": "y",
-#                         "type": "linear",
-#                         "range": "height",
-#                         "nice": True,
-#                         "zero": True,
-#                         "domain": {"data": "table", "field": y_field},
-#                     },
-#                     (
-#                         {
-#                             "name": "color",
-#                             "type": "ordinal",
-#                             "range": "category",
-#                             "domain": {"data": "table", "field": category_field},
-#                         }
-#                         if category_field
-#                         else None
-#                     ),
-#                 ],
-#                 "signals": [
-#                     {
-#                         "name": "interpolate",
-#                         "value": "linear",
-#                         "bind": {
-#                             "input": "select",
-#                             "options": [
-#                                 "basis",
-#                                 "cardinal",
-#                                 "catmull-rom",
-#                                 "linear",
-#                                 "monotone",
-#                                 "natural",
-#                                 "step",
-#                                 "step-after",
-#                                 "step-before",
-#                             ],
-#                         },
-#                     },
-#                 ],
-#                 "axes": [
-#                     {"orient": "bottom", "scale": "x"},
-#                     {"orient": "left", "scale": "y"},
-#                 ],
-#                 "marks": [
-#                     {
-#                         "type": "group",
-#                         "from": (
-#                             {
-#                                 "facet": {
-#                                     "name": "series",
-#                                     "data": "table",
-#                                     "groupby": category_field,
-#                                 }
-#                             }
-#                             if groupby_category
-#                             else {"data": "table"}
-#                         ),
-#                         "marks": [
-#                             {
-#                                 "type": "line",
-#                                 "from": (
-#                                     {"data": "series"}
-#                                     if groupby_category
-#                                     else {"data": "table"}
-#                                 ),
-#                                 "encode": {
-#                                     "enter": {
-#                                         "x": {"scale": "x", "field": x_field},
-#                                         "y": {"scale": "y", "field": y_field},
-#                                         "stroke": (
-#                                             {"scale": "color", "field": category_field}
-#                                             if category_field
-#                                             else {"value": "steelblue"}
-#                                         ),
-#                                         "strokeWidth": {"value": 2},
-#                                     },
-#                                     "update": {
-#                                         "interpolate": {"signal": "interpolate"},
-#                                         "strokeOpacity": {"value": 1},
-#                                     },
-#                                     "hover": {"strokeOpacity": {"value": 0.5}},
-#                                 },
-#                             }
-#                         ],
-#                     }
-#                 ],
-#             }
-#         )
-
-#         # Remove any None values that might have been added
-#         vega_spec["scales"] = [scale for scale in vega_spec["scales"] if scale]
-
-#         return vega_spec
-
-
 class BarChartOntology(Ontology):
+    def __init__(self, data):
+        self.data = data
+
     def define(self):
+
+        # Convert data to the required format
+        values = self.convert_data_to_vega_format(self.data)
         vega_spec = self.get_common_vega_spec()
         vega_spec.update(
             {
                 "data": [
                     {
                         "name": "table",
-                        "values": [
-                            {"category": "A", "amount": 28},
-                            {"category": "B", "amount": 55},
-                            {"category": "C", "amount": 43},
-                            {"category": "D", "amount": 91},
-                            {"category": "E", "amount": 81},
-                            {"category": "F", "amount": 53},
-                            {"category": "G", "amount": 19},
-                            {"category": "H", "amount": 87},
-                        ],
+                        "values": values,
                     },
                 ],
                 "signals": [
@@ -232,37 +96,36 @@ class BarChartOntology(Ontology):
         )
         return vega_spec
 
+    def convert_data_to_vega_format(self, data):
+        # Assuming data is a pandas DataFrame
+        categories = data.columns.tolist()
+        values = []
+        for i, row in data.iterrows():
+            for category in categories:
+                values.append(
+                    {
+                        "category": category,
+                        "amount": row[category],
+                        "series": category,  # Change this if there are multiple series
+                    }
+                )
+        return values
+
 
 class LineChartOntology(Ontology):
+    def __init__(self, data):
+        self.data = data
+
     def define(self):
+        # Convert data to the required format
+        values = self.convert_data_to_vega_format(self.data)
         vega_spec = self.get_common_vega_spec()
         vega_spec.update(
             {
                 "data": [
                     {
                         "name": "table",
-                        "values": [
-                            {"x": 0, "y": 28, "c": 0},
-                            {"x": 0, "y": 20, "c": 1},
-                            {"x": 1, "y": 43, "c": 0},
-                            {"x": 1, "y": 35, "c": 1},
-                            {"x": 2, "y": 81, "c": 0},
-                            {"x": 2, "y": 10, "c": 1},
-                            {"x": 3, "y": 19, "c": 0},
-                            {"x": 3, "y": 15, "c": 1},
-                            {"x": 4, "y": 52, "c": 0},
-                            {"x": 4, "y": 48, "c": 1},
-                            {"x": 5, "y": 24, "c": 0},
-                            {"x": 5, "y": 28, "c": 1},
-                            {"x": 6, "y": 87, "c": 0},
-                            {"x": 6, "y": 66, "c": 1},
-                            {"x": 7, "y": 17, "c": 0},
-                            {"x": 7, "y": 27, "c": 1},
-                            {"x": 8, "y": 68, "c": 0},
-                            {"x": 8, "y": 16, "c": 1},
-                            {"x": 9, "y": 49, "c": 0},
-                            {"x": 9, "y": 25, "c": 1},
-                        ],
+                        "values": values,
                     }
                 ],
                 "scales": [
@@ -311,6 +174,13 @@ class LineChartOntology(Ontology):
                     {"orient": "bottom", "scale": "x"},
                     {"orient": "left", "scale": "y"},
                 ],
+                "legends": [
+                    {
+                        "fill": "color",
+                        "title": "Category",
+                        "orient": "right",
+                    }
+                ],
                 "marks": [
                     {
                         "type": "group",
@@ -341,6 +211,17 @@ class LineChartOntology(Ontology):
             }
         )
         return vega_spec
+
+    def convert_data_to_vega_format(self, data):
+        """
+        Convert the data to the format required by the Vega spec.
+        Assumes data is a DataFrame with column names that can be used directly.
+        """
+        vega_values = []
+        for i, row in data.iterrows():
+            for col in data.columns:
+                vega_values.append({"x": i, "y": row[col], "c": col})
+        return vega_values
 
     def get_attributes(self):
         return {

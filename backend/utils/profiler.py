@@ -38,13 +38,13 @@ def identify_data_type(df):
             # Try to convert the column to datetime
             try:
                 df[column] = pd.to_datetime(df[column])
-                print(f"{column} was converted to datetime.")
+
             except ValueError:
                 # If the column wasn't converted to datetime, check if it's numeric
                 if df[column].dtype == "object":
                     try:
                         df[column] = pd.to_numeric(df[column])
-                        print(f"{column} was converted to numeric.")
+
                     except ValueError:
                         print(f"{column} is a non-numeric object.")
 
@@ -88,12 +88,12 @@ def extract_profile(profile, selected_columns):
     return new_profile
 
 
-def create_vega_chart(chart_type):
-    chart_ontology = ChartFactory.get_chart_ontology(chart_type)
+def create_vega_chart(chart_type, selectedData):
+    chart_ontology = ChartFactory.get_chart_ontology(chart_type, selectedData)
     vega_spec = chart_ontology.define()
     return vega_spec
 
 
-# # Example usage:
-# profile = profile_data()
-# print(profile)
+def dataForSelectedColumns(file_path, selectedColumns):
+    df = pd.read_csv(file_path)
+    return df[selectedColumns]
