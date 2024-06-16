@@ -1,12 +1,3 @@
-<<<<<<< HEAD
-server/__pycache__/
-server/context/__pycache__/
-server/factories/__pycache__/
-server/routes/__pycache__/
-server/ontologies/__pycache__/
-server/utils/__pycache__/
-server/lookup_tables/__pycache__/
-=======
 # Logs
 logs
 *.log
@@ -300,6 +291,4 @@ cython_debug/
 #  and can be added to the global gitignore or merged into this file.  For a more nuclear
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 .idea/
-
-ss23-suggesting-data-viz/
->>>>>>> 38dd333 (Updated .gitignore)
+data/notes
