@@ -85,15 +85,20 @@ def extract_profile(profile, selected_columns):
             if col in profile["categorical_vars"]
         },
     }
+    for column in new_profile["categorical_vars"]:
+        new_profile["data_types"][column] = "bool"
     return new_profile
 
 
-def create_vega_chart(chart_type, selectedData):
-    chart_ontology = ChartFactory.get_chart_ontology(chart_type, selectedData)
+def create_vega_chart(chart_type, selectedData, selectedColumns):
+    chart_ontology = ChartFactory.get_chart_ontology(
+        chart_type, selectedData, selectedColumns
+    )
     vega_spec = chart_ontology.define()
     return vega_spec
 
 
 def dataForSelectedColumns(file_path, selectedColumns):
     df = pd.read_csv(file_path)
-    return df[selectedColumns]
+    column_keys = [list(col_dict.keys())[0] for col_dict in selectedColumns]
+    return df[column_keys]

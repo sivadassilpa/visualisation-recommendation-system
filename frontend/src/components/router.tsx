@@ -4,6 +4,7 @@ import Home from "./pages/home/home";
 import Visualisation from "./pages/visualisation/visualisation";
 import FileUpload from "./pages/fileUpload/fileUpload";
 import Questionnaire from "./pages/questionnaires/userLevelQuestionnaires";
+import Rules from "./pages/admin/rules";
 
 const RouterComponent: FunctionComponent = () => {
   return (
@@ -12,7 +13,8 @@ const RouterComponent: FunctionComponent = () => {
         <Route path="/" element={<Home />} />
         <Route path="/visualisation" element={<Visualisation />} />
         <Route path="/fileUpload" element={<FileUpload />} />
-        <Route path="/questionnaires" element={<Questionnaire />} />
+        <Route path="/questionnaires" element={<Questionnaire />} />{" "}
+        <Route path="/rules" element={<Rules />} />
       </Routes>
     </Router>
   );

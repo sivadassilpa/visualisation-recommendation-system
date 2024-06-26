@@ -53,4 +53,19 @@ export const SApiService = {
   }): Promise<any> => {
     return axios.post(`${API_BASE_URL}/update-data-context`, data);
   },
+  insertRule: async (data: {
+    ruleName: string;
+    description: string;
+    condition: string | null;
+    informationType: string | null;
+    action: string;
+  }): Promise<any> => {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/insert-rules`, data);
+      return response.data;
+    } catch (error) {
+      console.error("Error inserting rule:", error);
+      throw error;
+    }
+  },
 };

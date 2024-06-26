@@ -1,10 +1,14 @@
 from backend.ontologies.ontology import Ontology
 import pandas as pd
 
+from backend.utils.dataTypes import DataTypeCategory
+
 
 class BarChartOntology(Ontology):
-    def __init__(self, data):
+    def __init__(self, data, chartType, selectedColumns):
         self.data = data
+        self.chartType = chartType
+        self.selectedColumns = selectedColumns
 
     def define(self):
 
@@ -18,6 +22,10 @@ class BarChartOntology(Ontology):
                         "name": "table",
                         "values": values,
                     },
+                ],
+                "axes": [
+                    {"orient": "bottom", "scale": "xscale"},
+                    {"orient": "left", "scale": "yscale"},
                 ],
                 "signals": [
                     {
@@ -113,8 +121,10 @@ class BarChartOntology(Ontology):
 
 
 class LineChartOntology(Ontology):
-    def __init__(self, data):
+    def __init__(self, data, chartType, selectedColumns):
         self.data = data
+        self.chartType = chartType
+        self.selectedColumns = selectedColumns
 
     def define(self):
         # Convert data to the required format
@@ -127,6 +137,10 @@ class LineChartOntology(Ontology):
                         "name": "table",
                         "values": values,
                     }
+                ],
+                "axes": [
+                    {"orient": "bottom", "scale": "xscale"},
+                    {"orient": "left", "scale": "yscale"},
                 ],
                 "scales": [
                     {
@@ -233,8 +247,141 @@ class LineChartOntology(Ontology):
 
 
 class PieChartOntology(Ontology):
+    def __init__(self, data, chartType, selectedColumns):
+        self.data = data
+        self.chartType = chartType
+        self.selectedColumns = selectedColumns
+
     def define(self):
-        return "PieChart Ontology Defined"
+        # Convert data to the required format
+        values = self.convert_data_to_vega_format()
+        vega_spec = self.get_common_vega_spec()
+        chart_title = self.get_chart_title()
+
+        vega_spec.update(
+            {
+                "$schema": "https://vega.github.io/schema/vega/v5.json",
+                "description": "A basic pie chart example.",
+                "title": chart_title,  # Add title to the Vega spec
+                "width": 200,
+                "height": 200,
+                "autosize": "none",
+                "signals": [
+                    {
+                        "name": "startAngle",
+                        "value": 0,
+                        "bind": {"input": "range", "min": 0, "max": 6.29, "step": 0.01},
+                    },
+                    {
+                        "name": "endAngle",
+                        "value": 6.29,
+                        "bind": {"input": "range", "min": 0, "max": 6.29, "step": 0.01},
+                    },
+                    {
+                        "name": "padAngle",
+                        "value": 0,
+                        "bind": {"input": "range", "min": 0, "max": 0.1},
+                    },
+                    {
+                        "name": "innerRadius",
+                        "value": 0,
+                        "bind": {"input": "range", "min": 0, "max": 90, "step": 1},
+                    },
+                    {
+                        "name": "cornerRadius",
+                        "value": 0,
+                        "bind": {"input": "range", "min": 0, "max": 10, "step": 0.5},
+                    },
+                    {"name": "sort", "value": False, "bind": {"input": "checkbox"}},
+                ],
+                "data": [
+                    {
+                        "name": "table",
+                        "values": values,
+                        "transform": [
+                            {
+                                "type": "pie",
+                                "field": "value",
+                                "startAngle": {"signal": "startAngle"},
+                                "endAngle": {"signal": "endAngle"},
+                                "sort": {"signal": "sort"},
+                            }
+                        ],
+                    }
+                ],
+                "scales": [
+                    {
+                        "name": "color",
+                        "type": "ordinal",
+                        "domain": {"data": "table", "field": "category"},
+                        "range": {"scheme": "category20"},
+                    }
+                ],
+                "marks": [
+                    {
+                        "type": "arc",
+                        "from": {"data": "table"},
+                        "encode": {
+                            "enter": {
+                                "fill": {"scale": "color", "field": "category"},
+                                "x": {"signal": "width / 2"},
+                                "y": {"signal": "height / 2"},
+                            },
+                            "update": {
+                                "startAngle": {"field": "startAngle"},
+                                "endAngle": {"field": "endAngle"},
+                                "padAngle": {"signal": "padAngle"},
+                                "innerRadius": {"signal": "innerRadius"},
+                                "outerRadius": {"signal": "width / 2"},
+                                "cornerRadius": {"signal": "cornerRadius"},
+                            },
+                        },
+                    }
+                ],
+            }
+        )
+        return vega_spec
+
+    def convert_data_to_vega_format(self):
+        """
+        Convert the data to the format required by the Vega spec.
+        Assumes data is a DataFrame with two columns: one for categories and one for values.
+        """
+        # Identify the boolean column from selectedColumns
+        boolean_column = next(
+            (
+                col
+                for col_dict in self.selectedColumns
+                for col, dtype in col_dict.items()
+                if dtype == DataTypeCategory.BOOLEAN
+            ),
+            None,
+        )
+        if boolean_column is None:
+            raise ValueError("No boolean column found in selectedColumns")
+
+        # Group by the boolean column and count occurrences of True and False
+        counts = self.data.groupby(boolean_column).size().reset_index(name="value")
+
+        # Map boolean values to string representation
+        counts["category"] = counts[boolean_column].astype(str).str.lower()
+
+        # Prepare the output in the required format
+        vega_values = counts[["category", "value"]].to_dict("records")
+
+        return vega_values
+
+    def get_chart_title(self):
+        """
+        Generate the chart title in the format: "Pie Chart: Column1 vs Column2"
+        """
+        chart_name = "Pie Chart"
+        column_names = " vs ".join(self.data.columns)
+        return f"{chart_name}: {column_names}"
 
     def get_attributes(self):
-        return {"slices": "Category", "values": "Values", "color": "Category"}
+        return {
+            "x_axis": None,
+            "y_axis": None,
+            "color": "Category",
+        }

@@ -1,3 +1,4 @@
+import itertools
 from flask import Blueprint, request, jsonify, current_app
 from werkzeug.utils import secure_filename
 import os
@@ -109,6 +110,7 @@ def upload_file():
             data_profile = json.loads(data_profile_str)
             user_id = data_profile.get("userId")
             data_profile = data_profile.get("dataProfile")
+
         else:
             data_profile = {}
             user_id = None
@@ -133,8 +135,13 @@ def upload_file():
         # Find the matching rules
 
         rules = find_matching_rule(data_profile, selected_data_profile)
-        selectedData = dataForSelectedColumns(file_path, rules[0]["column"])
-        vega_spec = create_vega_chart(rules[0]["action"], selectedData)
+        vega_specs = []
+        for rule in rules:
+            selectedData = dataForSelectedColumns(file_path, rule["column"])
+            vega_spec = create_vega_chart(
+                rule["rule"]["action"], selectedData, rule["column"]
+            )
+            vega_specs.append(vega_spec)
         # data_profile is the Questionnaire response and profile is the metadata profiled
 
         return (
@@ -142,7 +149,7 @@ def upload_file():
                 {
                     "message": "File uploaded successfully",
                     "filename": filename,
-                    "vegaspec": vega_spec,
+                    "vegaspec": vega_specs,
                 }
             ),
             200,
@@ -156,34 +163,65 @@ def find_matching_rule(questionnaire, data_profile):
     rules = []
     try:
         # Map data types
-        mapped_data_types = map_data_types(data_profile["data_types"])
-        print(mapped_data_types)
 
-        objective = "Understanding general trends"
+        objective = questionnaire["objective"]
 
-        # Loop through each data type category
-        for info_type, columns in mapped_data_types.items():
-            if not columns:
-                continue
+        if objective == "Understanding general trends (Exploratory Data Analysis)":
 
-            # Construct the condition
-            condition = (
-                f"objective = '{objective}' AND information_type = '{info_type.value}'"
-            )
+            # For EDA, we need the analysis of all the columns
+            mapped_data_types = map_data_types_to_info_type(data_profile["data_types"])
+            all_columns = [
+                (col, category) for col, category in mapped_data_types.items()
+            ]
+            # Generate all pairs of columns
+            column_pairs = list(itertools.combinations(all_columns, 2))
 
-            # Query the ruleset
-            query = "SELECT * FROM rulesets WHERE condition = %s LIMIT 1"
-            cursor.execute(query, (condition,))
-            rules_fetched = cursor.fetchall()  # Fetch all matching rules
-            for rule in rules_fetched:
-                rule_dict = responseParser(cursor.description, rule)
-                rules.append(
-                    {
-                        "column": columns,
-                        "rule": rule_dict,
-                        "action": rule_dict["action"],
-                    }
+            # Loop through each pair of columns
+            for (col1, cat1), (col2, cat2) in column_pairs:
+                condition = f"objective = {objective}"
+                infoType = (
+                    cat1.value
+                    if cat1.value == cat2.value
+                    else f"{cat1.value} AND {cat2.value}"
                 )
+
+                # Query the ruleset
+                query = "SELECT * FROM rules WHERE condition = %s AND information_type = %s LIMIT 1"
+                cursor.execute(query, (condition, infoType))
+                rules_fetched = cursor.fetchall()  # Fetch all matching rules
+                for rule in rules_fetched:
+                    rule_dict = responseParser(cursor.description, rule)
+                    rules.append(
+                        {
+                            "column": [{col1: cat1}, {col2: cat2}],
+                            "rule": rule_dict,
+                            "action": rule_dict["action"],
+                        }
+                    )
+        else:
+            mapped_data_types = map_data_types(data_profile["data_types"])
+
+            # Loop through each data type category
+            for info_type, columns in mapped_data_types.items():
+                if not columns:
+                    continue
+
+                # Construct the condition
+                condition = f"objective = {objective}"
+                informationType = f"{info_type.value}"
+                # Query the ruleset
+                query = "SELECT * FROM rules WHERE condition = %s AND information_type = %s LIMIT 1"
+                cursor.execute(query, (condition, informationType))
+                rules_fetched = cursor.fetchall()  # Fetch all matching rules
+                for rule in rules_fetched:
+                    rule_dict = responseParser(cursor.description, rule)
+                    rules.append(
+                        {
+                            "column": columns,
+                            "rule": rule_dict,
+                            "action": rule_dict["action"],
+                        }
+                    )
 
         return rules
     except Exception as e:
@@ -216,3 +254,17 @@ def map_data_types(data_types_dict):
             mapped_columns[DataTypeCategory.UNKNOWN].append(column)
 
     return mapped_columns
+
+
+def map_data_types_to_info_type(data_types):
+    mapped_data_types = {}
+
+    for col, dtype in data_types.items():
+        for category, types in type_mapping.items():
+            if dtype in types:
+                mapped_data_types[col] = category
+                break
+        else:
+            mapped_data_types[col] = "unknown"
+
+    return mapped_data_types

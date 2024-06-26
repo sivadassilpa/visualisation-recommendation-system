@@ -95,3 +95,31 @@ def updateUserProfile():
     except Exception as e:
         conn.rollback()
         return jsonify({"error": str(e)}), 500
+
+
+@login_bp.route("/insert-rules", methods=["POST"])
+def insert_rule():
+    try:
+        data = request.json
+        rule_name = data.get("ruleName")
+        description = data.get("description")
+        condition = data.get("condition")
+        information_type = data.get("informationType")
+        action = data.get("action")
+
+        conn = connect_to_db()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            INSERT INTO public.rules (rule_name, description, condition, information_type, action)
+            VALUES (%s, %s, %s, %s, %s)
+            """,
+            (rule_name, description, condition, information_type, action),
+        )
+
+        conn.commit()
+        return jsonify({"message": "Rule inserted successfully"}), 200
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"error": str(e)}), 500

@@ -8,8 +8,13 @@ class Ontology:
             "width": 400,
             "height": 200,
             "padding": 5,
-            "axes": [
-                {"orient": "bottom", "scale": "xscale"},
-                {"orient": "left", "scale": "yscale"},
-            ],
+            "title": self.get_chart_title(),
         }
+
+    def get_chart_title(self):
+        """
+        Generate the chart title in the format: "Chart Name: Column1 vs Column2 vs Column3"
+        """
+        chart_name = self.chartType
+        column_names = " vs ".join(self.data.columns)
+        return f"{chart_name}: {column_names}"
