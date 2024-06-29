@@ -1,4 +1,10 @@
-import { FunctionComponent, useEffect, useRef, useState } from "react";
+import {
+  Dispatch,
+  FunctionComponent,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import "./fileUpload.scss";
 import {
   Checkbox,
@@ -10,6 +16,7 @@ import {
   MenuItem,
   OutlinedInput,
   Select,
+  Tooltip,
 } from "@mui/material";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import * as XLSX from "xlsx"; // Import xlsx library
@@ -25,8 +32,12 @@ const MenuProps = {
     },
   },
 };
-
-const FileUpload: FunctionComponent = () => {
+export interface IFileUploadProps {
+  setShowVisualisation?: Dispatch<React.SetStateAction<boolean>>;
+  setVegaObject?: React.Dispatch<React.SetStateAction<any[]>>;
+}
+const FileUpload: FunctionComponent<IFileUploadProps> = (props) => {
+  const { setShowVisualisation, setVegaObject } = props;
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
   const [columnNames, setColumnNames] = useState<string[]>([]);
@@ -94,16 +105,25 @@ const FileUpload: FunctionComponent = () => {
 
   return (
     <Grid container className="file-upload-main-container">
-      <Grid item xs={12} style={{ height: "5vh" }}>
-        <h1>File Upload</h1>
+      <Grid
+        item
+        xs={12}
+        style={{
+          height: "5vh",
+          textAlign: "center",
+          fontSize: "18pt",
+          fontWeight: "bold",
+        }}
+      >
+        <span>File Upload</span>
       </Grid>
       <Grid
         item
         xs={12}
         className="file-upload-container"
-        style={{ height: "20vh" }}
+        style={{ height: "35vh" }}
       >
-        <Grid item xs={6} className="file-upload">
+        <Grid item xs={12} className="file-upload">
           <Grid item xs={12} className="file-upload-title">
             Please select a file
           </Grid>
@@ -134,7 +154,7 @@ const FileUpload: FunctionComponent = () => {
           </Grid>
         </Grid>
 
-        <Grid item xs={6} className="column-list">
+        <Grid item xs={12} className="column-list">
           <Grid item xs={12} className="column-list-title">
             {selectedFile && <div>Selected file: {selectedFile.name}</div>}
           </Grid>
@@ -186,22 +206,12 @@ const FileUpload: FunctionComponent = () => {
         </Grid>
       </Grid>
       {selectedFile && (
-        <Grid
-          item
-          xs={12}
-          className="questionaire-container"
-          style={{ height: "50vh" }}
-        >
-          <h3>Questionaire</h3>
-          <h5>
-            The Questionnaire helps understand the purpose of data
-            visualization. Participation is optional.
-          </h5>
-          <DataContextQuestionaire
-            selectedFile={selectedFile}
-            selectedColumns={selectedColumns}
-          ></DataContextQuestionaire>
-        </Grid>
+        <DataContextQuestionaire
+          selectedFile={selectedFile}
+          selectedColumns={selectedColumns}
+          setShowVisualisation={setShowVisualisation}
+          setVegaObject={setVegaObject}
+        ></DataContextQuestionaire>
       )}
     </Grid>
   );

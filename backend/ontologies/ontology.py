@@ -5,7 +5,7 @@ class Ontology:
     def get_common_vega_spec(self):
         return {
             "$schema": "https://vega.github.io/schema/vega/v5.json",
-            "width": 400,
+            "width": 300,
             "height": 200,
             "padding": 5,
             "title": self.get_chart_title(),

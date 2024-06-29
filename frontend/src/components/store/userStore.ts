@@ -3,6 +3,7 @@ interface IUserDetails {
   username: string;
   password: string | undefined;
   userId?: number | undefined;
+  dataProfileId?: number | undefined;
 }
 
 interface UserDetailsState {

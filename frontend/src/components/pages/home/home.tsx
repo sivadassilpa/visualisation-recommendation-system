@@ -22,7 +22,7 @@ const Home: FunctionComponent = () => {
         if (!userProfile) {
           navigate("/questionnaires");
         } else {
-          navigate("/fileUpload");
+          navigate("/main");
         }
       })
       .catch((err) => {

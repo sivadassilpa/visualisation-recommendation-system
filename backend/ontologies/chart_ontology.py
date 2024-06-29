@@ -263,8 +263,8 @@ class PieChartOntology(Ontology):
                 "$schema": "https://vega.github.io/schema/vega/v5.json",
                 "description": "A basic pie chart example.",
                 "title": chart_title,  # Add title to the Vega spec
-                "width": 200,
-                "height": 200,
+                "width": 150,
+                "height": 150,
                 "autosize": "none",
                 "signals": [
                     {

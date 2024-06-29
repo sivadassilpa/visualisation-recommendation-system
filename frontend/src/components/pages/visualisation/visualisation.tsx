@@ -1,36 +1,91 @@
-import { Fragment, FunctionComponent, useEffect, useState } from "react";
+import { FunctionComponent } from "react";
 import VegaChart from "../vega/vega";
 import { userDetailsStore } from "../../store/userStore";
-import { useLocation } from "react-router-dom";
-import { Grid } from "@mui/material";
-
-const Visualisation: FunctionComponent = () => {
+import { Button, Grid } from "@mui/material";
+import ThumbUpIcon from "@mui/icons-material/ThumbUp";
+import ThumbDownIcon from "@mui/icons-material/ThumbDown";
+const Visualisation: FunctionComponent<{ vegaObject?: any[] }> = (props) => {
+  const { vegaObject } = props;
   const userDetails = userDetailsStore((state) => state.userDetails);
-  const [vegaObject, setVegaObject] = useState([]);
-  const location = useLocation();
-
-  useEffect(() => {
-    if (userDetails?.username && location.state.vegaspec) {
-      setVegaObject(location.state.vegaspec);
-    }
-  }, [userDetails, location.state.vegaspec, location.state]);
-
+  const feedback = (userPreference: boolean, ruleId: number) => {
+    console.log(userDetails, userPreference, ruleId);
+  };
   return (
     <div>
-      <div className="home-title">Visualization Page for {"username"}</div>
-      <Grid style={{ width: "100%" }} container>
+      <Grid
+        item
+        xs={12}
+        style={{
+          height: "5vh",
+          textAlign: "center",
+          fontSize: "18pt",
+          fontWeight: "bold",
+        }}
+      >
+        <span>Visualization Page for {userDetails?.username}</span>
+      </Grid>
+      <Grid
+        style={{
+          width: "100%",
+          maxHeight: "90vh",
+          overflowY: "auto",
+          paddingRight: "10px",
+          marginBottom: "10px",
+        }}
+        container
+      >
         {vegaObject &&
-          vegaObject.map((object: any, index) => (
-            <Grid key={index} item xs={6} style={{ textAlign: "center" }}>
-              {object.title.includes("Pie Chart:") && (
-                <div>
-                  <h5>{object.title}</h5>
-                </div>
-              )}
-              <VegaChart spec={object} />
-              <div style={{ height: "50px" }}></div>
-            </Grid>
-          ))}
+          vegaObject.map((object: any, index) => {
+            const vegaObject = object.vegaSpec;
+            const ruleId = object.ruleId;
+            const { title, ...vegaSpec } = vegaObject; // Destructure to remove title from object
+            console.log(vegaSpec);
+            return (
+              <Grid
+                key={index}
+                item
+                xs={6}
+                style={{
+                  textAlign: "center",
+                  border: "1px solid grey",
+                }}
+              >
+                <Grid
+                  style={{
+                    height: "70px",
+                    width: "100%",
+                    textAlign: "right",
+                    padding: "20px 20px 0 0",
+                  }}
+                  container
+                >
+                  <Grid item xs={9}>
+                    <div style={{ textAlign: "center", fontWeight: "bold" }}>
+                      {title}
+                    </div>
+                  </Grid>
+                  <Grid item xs={1.5}>
+                    <Button
+                      style={{ color: "#7bff73" }}
+                      onClick={() => feedback(true, ruleId)}
+                    >
+                      <ThumbUpIcon />
+                    </Button>
+                  </Grid>
+                  <Grid item xs={1.5}>
+                    <Button
+                      style={{ color: "#8a1b1b" }}
+                      onClick={() => feedback(false, ruleId)}
+                    >
+                      <ThumbDownIcon />
+                    </Button>
+                  </Grid>
+                </Grid>
+
+                <VegaChart spec={vegaSpec} />
+              </Grid>
+            );
+          })}
       </Grid>
     </div>
   );

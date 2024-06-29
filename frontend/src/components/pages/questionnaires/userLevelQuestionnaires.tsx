@@ -40,7 +40,7 @@ const UserLevelQuestionnaires: FunctionComponent = () => {
         SApiService.updateUserProfile(data);
       }
     }
-    navigate("/fileUpload");
+    navigate("/main");
   };
 
   return (

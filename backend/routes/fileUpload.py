@@ -48,7 +48,7 @@ def update_data_profile(userId, filename, dataProfile):
                         groupcomparison = %s,
                         colorpreferences = %s,
                         usecase = %s
-                    WHERE userid = %s AND filename = %s
+                    WHERE userid = %s AND filename = %s 
                 """,
                     (
                         dataProfile["objective"],
@@ -60,6 +60,7 @@ def update_data_profile(userId, filename, dataProfile):
                         filename,
                     ),
                 )
+                dataProfileId = existing_profile[0]
             except Exception as e:
                 conn.rollback()
                 print(e)
@@ -70,7 +71,7 @@ def update_data_profile(userId, filename, dataProfile):
                 cursor.execute(
                     """
                     INSERT INTO data_contexts (userid, filename, objective, patternsinterest, groupcomparison, colorpreferences, usecase)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id
                 """,
                     (
                         userId,
@@ -82,12 +83,13 @@ def update_data_profile(userId, filename, dataProfile):
                         dataProfile["usecase"],
                     ),
                 )
+                dataProfileId = cursor.fetchone()[0]
             except Exception as e:
                 conn.rollback()
                 print(e)
 
         conn.commit()
-        return jsonify({"message": "User profile updated successfully"}), 200
+        return dataProfileId
     except Exception as e:
         conn.rollback()
         return jsonify({"error": str(e)}), 500
@@ -123,7 +125,7 @@ def upload_file():
         # Metadata Extraction -> DataProfiling
         profile = profile_data(file_path)
         if user_id:
-            update_data_profile(user_id, filename, data_profile)
+            dataProfileId = update_data_profile(user_id, filename, data_profile)
         if columns:
             selected_columns = columns.split(",")
         else:
@@ -141,7 +143,7 @@ def upload_file():
             vega_spec = create_vega_chart(
                 rule["rule"]["action"], selectedData, rule["column"]
             )
-            vega_specs.append(vega_spec)
+            vega_specs.append({"vegaSpec": vega_spec, "ruleId": rule["rule"]["id"]})
         # data_profile is the Questionnaire response and profile is the metadata profiled
 
         return (
@@ -150,6 +152,8 @@ def upload_file():
                     "message": "File uploaded successfully",
                     "filename": filename,
                     "vegaspec": vega_specs,
+                    "dataProfileId": dataProfileId,
+                    "userId": user_id,
                 }
             ),
             200,

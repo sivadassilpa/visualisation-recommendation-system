@@ -32,6 +32,10 @@
   }
 }
 .questionnaire-container-data {
+  max-height: 40vh;
+  overflow-y: auto;
+  padding-right: 10px;
+  margin-bottom: 10px;
   h6 {
     margin-bottom: 4px;
     margin-top: 10px;
