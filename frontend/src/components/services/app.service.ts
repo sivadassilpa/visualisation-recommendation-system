@@ -68,4 +68,21 @@ export const SApiService = {
       throw error;
     }
   },
+  insertFeedback: async (data: {
+    ruleId: number;
+    userProfileId: number;
+    dataProfileId: number;
+    preference: boolean;
+  }): Promise<any> => {
+    try {
+      const response = await axios.post(
+        `${API_BASE_URL}/insert-feedback`,
+        data
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error inserting rule:", error);
+      throw error;
+    }
+  },
 };

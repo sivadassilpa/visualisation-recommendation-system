@@ -1,7 +1,7 @@
 import { Dispatch, FunctionComponent, useState } from "react";
 import "./questionnaires.scss";
 import { dataLevelQuestions } from "../../utils/questions";
-import { useNavigate } from "react-router-dom";
+
 import {
   FormControl,
   Select,
@@ -41,7 +41,6 @@ const DataContextQuestionaire: FunctionComponent<IDataContextComponentProps> = (
   const [answers, setAnswers] = useState<IQuestionaireResponse[]>(
     _.cloneDeep(defaultDataContextAnswers)
   );
-  const setUserDetails = userDetailsStore((state) => state.setUserDetails);
 
   const handleOptionSelect = (index: number, option: string) => {
     const newAnswers = [...answers];

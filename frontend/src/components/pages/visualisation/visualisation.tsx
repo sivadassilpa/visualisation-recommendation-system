@@ -4,12 +4,28 @@ import { userDetailsStore } from "../../store/userStore";
 import { Button, Grid } from "@mui/material";
 import ThumbUpIcon from "@mui/icons-material/ThumbUp";
 import ThumbDownIcon from "@mui/icons-material/ThumbDown";
+import { SApiService } from "../../services/app.service";
 const Visualisation: FunctionComponent<{ vegaObject?: any[] }> = (props) => {
   const { vegaObject } = props;
   const userDetails = userDetailsStore((state) => state.userDetails);
   const feedback = (userPreference: boolean, ruleId: number) => {
-    console.log(userDetails, userPreference, ruleId);
+    if (userDetails?.userId && userDetails?.dataProfileId) {
+      const data = {
+        ruleId: ruleId,
+        userProfileId: userDetails?.userId,
+        dataProfileId: userDetails?.dataProfileId,
+        preference: userPreference,
+      };
+      SApiService.insertFeedback(data)
+        .then((res) => {
+          console.log("Successfull", res);
+        })
+        .catch((err) => {
+          console.log("Failed", err);
+        });
+    }
   };
+
   return (
     <div>
       <Grid

@@ -14,11 +14,8 @@ from backend.utils.profiler import (
     dataForSelectedColumns,
 )
 
-fileUpload_bp = Blueprint("fileUpload", __name__)
-
 conn = connect_to_db()
 cursor = conn.cursor()
-
 # Allowed file extensions
 ALLOWED_EXTENSIONS = {"csv", "xls", "xlsx"}
 
@@ -93,73 +90,6 @@ def update_data_profile(userId, filename, dataProfile):
     except Exception as e:
         conn.rollback()
         return jsonify({"error": str(e)}), 500
-
-
-@fileUpload_bp.route("/uploadFile", methods=["POST"])
-def upload_file():
-    # Improvements : Saving could be avoided and object file could be directly used.
-    if "file" not in request.files:
-        return jsonify({"error": "No file part in the request"}), 400
-
-    file = request.files["file"]
-    if file.filename == "":
-        return jsonify({"error": "No selected file"}), 400
-
-    if file and allowed_file(file.filename):
-        columns = request.form.get("columns")
-        data_profile_str = request.form.get("dataProfile")
-        if data_profile_str:
-            data_profile = json.loads(data_profile_str)
-            user_id = data_profile.get("userId")
-            data_profile = data_profile.get("dataProfile")
-
-        else:
-            data_profile = {}
-            user_id = None
-            data_profile = None
-        # Save uploaded file to uploads/filename
-        filename = secure_filename(file.filename)
-        file_path = os.path.join(current_app.config["UPLOAD_FOLDER"], filename)
-        file.save(file_path)
-
-        # Metadata Extraction -> DataProfiling
-        profile = profile_data(file_path)
-        if user_id:
-            dataProfileId = update_data_profile(user_id, filename, data_profile)
-        if columns:
-            selected_columns = columns.split(",")
-        else:
-            return jsonify({"error": "No columns selected"}), 400
-
-        # Pending =>Save to database
-        selected_data_profile = extract_profile(profile, selected_columns)
-        # extract the metadat for selected columns
-        # Find the matching rules
-
-        rules = find_matching_rule(data_profile, selected_data_profile)
-        vega_specs = []
-        for rule in rules:
-            selectedData = dataForSelectedColumns(file_path, rule["column"])
-            vega_spec = create_vega_chart(
-                rule["rule"]["action"], selectedData, rule["column"]
-            )
-            vega_specs.append({"vegaSpec": vega_spec, "ruleId": rule["rule"]["id"]})
-        # data_profile is the Questionnaire response and profile is the metadata profiled
-
-        return (
-            jsonify(
-                {
-                    "message": "File uploaded successfully",
-                    "filename": filename,
-                    "vegaspec": vega_specs,
-                    "dataProfileId": dataProfileId,
-                    "userId": user_id,
-                }
-            ),
-            200,
-        )
-    else:
-        return jsonify({"error": "File type not allowed"}), 400
 
 
 # Function to find matching rule

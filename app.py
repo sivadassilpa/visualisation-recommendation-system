@@ -32,18 +32,9 @@ def teardown_db(exception):
     print("Connection to PostgreSQL closed")
 
 
-from backend.routes.login import login_bp
-from backend.routes.register import register_bp
-from backend.routes.visualise import visualise_bp
-from backend.routes.fileUpload import fileUpload_bp, find_matching_rule
+from backend.routes.endpoints import login_bp
 
 app.register_blueprint(login_bp)
-app.register_blueprint(register_bp)
-app.register_blueprint(visualise_bp)
-app.register_blueprint(fileUpload_bp)
 
 if __name__ == "__main__":
-    # Test onotlogy
-    # test()
-
     app.run(debug=True)
