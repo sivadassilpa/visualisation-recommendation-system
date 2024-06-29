@@ -1,18 +1,10 @@
 import itertools
-from flask import Blueprint, request, jsonify, current_app
-from werkzeug.utils import secure_filename
-import os
+
+from flask import jsonify
 from backend.database import connect_to_db
-import json
 
 from backend.utils.dataTypes import DataTypeCategory, type_mapping
 from backend.utils.responseParser import responseParser
-from backend.utils.profiler import (
-    create_vega_chart,
-    extract_profile,
-    profile_data,
-    dataForSelectedColumns,
-)
 
 conn = connect_to_db()
 cursor = conn.cursor()
@@ -93,8 +85,19 @@ def update_data_profile(userId, filename, dataProfile):
 
 
 # Function to find matching rule
-def find_matching_rule(questionnaire, data_profile):
+def find_matching_rule(questionnaire, data_profile, user_id, dataProfileId):
     rules = []
+    existingFeedbacks = checkIfFeedbackExists(user_id, dataProfileId)
+    positive_feedback = []
+    negative_feedback = []
+
+    for pref, rule_ids in existingFeedbacks:
+        if pref:
+            positive_feedback = rule_ids
+        else:
+            negative_feedback = rule_ids
+    # rules = fetchAllPositiveRules(rules, positive_feedback)
+
     try:
         # Map data types
 
@@ -124,14 +127,26 @@ def find_matching_rule(questionnaire, data_profile):
                 cursor.execute(query, (condition, infoType))
                 rules_fetched = cursor.fetchall()  # Fetch all matching rules
                 for rule in rules_fetched:
-                    rule_dict = responseParser(cursor.description, rule)
-                    rules.append(
-                        {
-                            "column": [{col1: cat1}, {col2: cat2}],
-                            "rule": rule_dict,
-                            "action": rule_dict["action"],
-                        }
-                    )
+                    # Removing negative feedbacks
+                    if rule[0] not in negative_feedback:
+                        rule_dict = responseParser(cursor.description, rule)
+                        if rule[0] in positive_feedback:
+                            rules.insert(
+                                0,
+                                {
+                                    "column": [{col1: cat1}, {col2: cat2}],
+                                    "rule": rule_dict,
+                                    "action": rule_dict["action"],
+                                },
+                            )
+                        else:
+                            rules.append(
+                                {
+                                    "column": [{col1: cat1}, {col2: cat2}],
+                                    "rule": rule_dict,
+                                    "action": rule_dict["action"],
+                                }
+                            )
         else:
             mapped_data_types = map_data_types(data_profile["data_types"])
 
@@ -147,16 +162,28 @@ def find_matching_rule(questionnaire, data_profile):
                 query = "SELECT * FROM rules WHERE condition = %s AND information_type = %s LIMIT 1"
                 cursor.execute(query, (condition, informationType))
                 rules_fetched = cursor.fetchall()  # Fetch all matching rules
+                # Removing negative feedbacks
                 for rule in rules_fetched:
-                    rule_dict = responseParser(cursor.description, rule)
-                    rules.append(
-                        {
-                            "column": columns,
-                            "rule": rule_dict,
-                            "action": rule_dict["action"],
-                        }
-                    )
-
+                    # Removing negative feedbacks
+                    if rule[0] not in negative_feedback:
+                        rule_dict = responseParser(cursor.description, rule)
+                        if rule[0] in positive_feedback:
+                            rules.insert(
+                                0,
+                                {
+                                    "column": [{col1: cat1}, {col2: cat2}],
+                                    "rule": rule_dict,
+                                    "action": rule_dict["action"],
+                                },
+                            )
+                        else:
+                            rules.append(
+                                {
+                                    "column": [{col1: cat1}, {col2: cat2}],
+                                    "rule": rule_dict,
+                                    "action": rule_dict["action"],
+                                }
+                            )
         return rules
     except Exception as e:
         print(e)
@@ -202,3 +229,33 @@ def map_data_types_to_info_type(data_types):
             mapped_data_types[col] = "unknown"
 
     return mapped_data_types
+
+
+def checkIfFeedbackExists(userProfileId, dataProfileId):
+    try:
+        # Check if the user profile exists for the given userId
+        cursor.execute(
+            "SELECT preferred, array_agg(ruleid) as ruleids FROM feedback WHERE userprofileid = %s AND dataprofileid = %s GROUP BY preferred",
+            (userProfileId, dataProfileId),
+        )
+        existingFeedback = cursor.fetchall()
+        conn.commit()
+        return existingFeedback
+    except Exception as e:
+        print(e)
+        conn.rollback()
+
+
+def fetchAllPositiveRules(rules, positiveFeedback):
+    try:
+        positiveFeedback_str = ",".join(map(str, positiveFeedback))
+        # Check if the user profile exists for the given userId
+        cursor.execute(
+            f"SELECT * FROM rules WHERE id IN ({positiveFeedback_str});",
+        )
+        positiveRules = cursor.fetchall()
+        conn.commit()
+        return positiveRules
+    except Exception as e:
+        print(e)
+        conn.rollback()

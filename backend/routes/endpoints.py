@@ -180,7 +180,9 @@ def upload_file():
         # extract the metadat for selected columns
         # Find the matching rules
 
-        rules = find_matching_rule(data_profile, selected_data_profile)
+        rules = find_matching_rule(
+            data_profile, selected_data_profile, user_id, dataProfileId
+        )
         vega_specs = []
         for rule in rules:
             selectedData = dataForSelectedColumns(file_path, rule["column"])
