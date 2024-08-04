@@ -176,7 +176,7 @@ def upload_file():
             return jsonify({"error": "No columns selected"}), 400
 
         # Pending =>Save to database
-        selected_data_profile = extract_profile(profile, selected_columns)
+        selected_data_profile = extract_profile(file_path, profile, selected_columns)
         # extract the metadat for selected columns
         # Find the matching rules
 
@@ -198,8 +198,8 @@ def upload_file():
                     "message": "File uploaded successfully",
                     "filename": filename,
                     "vegaspec": vega_specs,
-                    "dataProfileId": dataProfileId,
-                    "userId": user_id,
+                    "dataProfileId": int(dataProfileId),
+                    "userId": int(user_id),
                 }
             ),
             200,

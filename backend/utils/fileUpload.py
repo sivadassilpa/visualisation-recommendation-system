@@ -1,4 +1,6 @@
+from collections import defaultdict
 import itertools
+import re
 
 from flask import jsonify
 from backend.database import connect_to_db
@@ -87,6 +89,121 @@ def update_data_profile(userId, filename, dataProfile):
 # Function to find matching rule
 def find_matching_rule(questionnaire, data_profile, user_id, dataProfileId):
     rules = []
+    positive_feedback, negative_feedback = returnFeedbacks(user_id, dataProfileId)
+    # rules = fetchAllPositiveRules(rules, positive_feedback)
+
+    try:
+        # Map data types
+
+        objective = questionnaire["objective"]
+
+        if objective == "Understanding general trends (Exploratory Data Analysis)":
+            rules = handleEDAObjective(
+                data_profile, objective, negative_feedback, positive_feedback, rules
+            )
+
+        else:
+            mapped_data_types = map_data_types(data_profile["data_types"])
+            rules = []
+            condition = f"objective = {objective}"
+            rules_fetched = returnRulesFromDB(condition)
+            print(rules_fetched)
+            formattedRules = []
+            for rule_fetched in rules_fetched:
+                formattedRule = responseParser(cursor.description, rule_fetched)
+                formattedRules.append(formattedRule)
+            for index, rule in enumerate(formattedRules):
+                info_types = re.split(r"\sAND\s|\sOR\s", rule["information_type"])
+                columnDetails = []
+                tempInfoTypes = info_types.copy()
+                for info_type in info_types:
+                    for key, dtypes in mapped_data_types.items():
+                        if info_type in key.value and len(dtypes) > 0:
+                            tempInfoTypes.remove(info_type)
+                            columnDetails.extend(
+                                [
+                                    {dtype: key.value}
+                                    for dtype in dtypes
+                                    if key.value == info_type
+                                ]
+                            )
+                            print("info", tempInfoTypes)
+                if len(tempInfoTypes) == 0:
+                    formattedRules[index]["columnDetails"] = columnDetails
+                    current_rule = [rules_fetched[index]]
+                    rules = returnFormattedRules(
+                        current_rule,
+                        negative_feedback,
+                        positive_feedback,
+                        rules,
+                        columnDetails,
+                    )
+        rules = combine_word_cloud_entries(rules)
+        return rules
+    except Exception as e:
+        print(e)
+
+
+def combine_word_cloud_entries(data):
+    combined = defaultdict(lambda: {"column": [], "rule": None, "action": "Word Cloud"})
+
+    for entry in data:
+        if entry["action"] == "Word Cloud":
+            key = frozenset(entry["rule"].items())
+            combined[key]["rule"] = entry["rule"]
+            combined[key]["column"].extend(entry["column"])
+        else:
+            combined[frozenset(entry["rule"].items())] = entry
+
+    # Remove duplicates from column lists
+    for key in combined:
+        combined[key]["column"] = list(
+            {frozenset(col.items()): col for col in combined[key]["column"]}.values()
+        )
+
+    return list(combined.values())
+
+
+def handleEDAObjective(
+    data_profile, objective, negative_feedback, positive_feedback, rules
+):
+    # For EDA, we need the analysis of all the columns
+    mapped_data_types = map_data_types_to_info_type(data_profile["data_types"])
+    all_columns = [(col, category) for col, category in mapped_data_types.items()]
+    # Generate all pairs of columns
+    column_pairs = list(itertools.combinations(all_columns, 2))
+    # Loop through each pair of columns
+    for (col1, cat1), (col2, cat2) in column_pairs:
+        condition = f"objective = {objective}"
+        infoType = (
+            cat1.value if cat1.value == cat2.value else f"{cat1.value} AND {cat2.value}"
+        )
+
+        # Query the ruleset
+        rules_fetched = returnRulesFromDB(
+            condition, infoType
+        )  # Fetch all matching rules
+        if rules_fetched == []:
+            # try reverting the info types
+            infoType = (
+                cat1.value
+                if cat1.value == cat2.value
+                else f"{cat2.value} AND {cat1.value}"
+            )
+            rules_fetched = returnRulesFromDB(condition, infoType)
+        if rules_fetched != []:
+            columns = [{col1: cat1}, {col2: cat2}]
+            rules = returnFormattedRules(
+                rules_fetched,
+                negative_feedback,
+                positive_feedback,
+                rules,
+                columns,
+            )
+    return rules
+
+
+def returnFeedbacks(user_id, dataProfileId):
     existingFeedbacks = checkIfFeedbackExists(user_id, dataProfileId)
     positive_feedback = []
     negative_feedback = []
@@ -96,97 +213,49 @@ def find_matching_rule(questionnaire, data_profile, user_id, dataProfileId):
             positive_feedback = rule_ids
         else:
             negative_feedback = rule_ids
-    # rules = fetchAllPositiveRules(rules, positive_feedback)
+    return positive_feedback, negative_feedback
 
-    try:
-        # Map data types
 
-        objective = questionnaire["objective"]
+def returnRulesFromDB(condition, infoType=None):
+    if infoType:
+        query = (
+            "SELECT * FROM rules WHERE condition = %s AND information_type = %s LIMIT 1"
+        )
+        cursor.execute(query, (condition, infoType))
+    else:
+        query = "SELECT * FROM rules WHERE condition = %s"
+        cursor.execute(query, (condition,))
 
-        if objective == "Understanding general trends (Exploratory Data Analysis)":
+    rules_fetched = cursor.fetchall()  # Fetch all matching rules
+    return rules_fetched
 
-            # For EDA, we need the analysis of all the columns
-            mapped_data_types = map_data_types_to_info_type(data_profile["data_types"])
-            all_columns = [
-                (col, category) for col, category in mapped_data_types.items()
-            ]
-            # Generate all pairs of columns
-            column_pairs = list(itertools.combinations(all_columns, 2))
 
-            # Loop through each pair of columns
-            for (col1, cat1), (col2, cat2) in column_pairs:
-                condition = f"objective = {objective}"
-                infoType = (
-                    cat1.value
-                    if cat1.value == cat2.value
-                    else f"{cat1.value} AND {cat2.value}"
+def returnFormattedRules(
+    rules_fetched, negative_feedback, positive_feedback, rules, columns
+):
+    print("before rules...")
+    for rule in rules_fetched:
+        # Removing negative feedbacks
+        if rule[0] not in negative_feedback:
+            rule_dict = responseParser(cursor.description, rule)
+            if rule[0] in positive_feedback:
+                rules.insert(
+                    0,
+                    {
+                        "column": columns,
+                        "rule": rule_dict,
+                        "action": rule_dict["action"],
+                    },
                 )
-
-                # Query the ruleset
-                query = "SELECT * FROM rules WHERE condition = %s AND information_type = %s LIMIT 1"
-                cursor.execute(query, (condition, infoType))
-                rules_fetched = cursor.fetchall()  # Fetch all matching rules
-                for rule in rules_fetched:
-                    # Removing negative feedbacks
-                    if rule[0] not in negative_feedback:
-                        rule_dict = responseParser(cursor.description, rule)
-                        if rule[0] in positive_feedback:
-                            rules.insert(
-                                0,
-                                {
-                                    "column": [{col1: cat1}, {col2: cat2}],
-                                    "rule": rule_dict,
-                                    "action": rule_dict["action"],
-                                },
-                            )
-                        else:
-                            rules.append(
-                                {
-                                    "column": [{col1: cat1}, {col2: cat2}],
-                                    "rule": rule_dict,
-                                    "action": rule_dict["action"],
-                                }
-                            )
-        else:
-            mapped_data_types = map_data_types(data_profile["data_types"])
-
-            # Loop through each data type category
-            for info_type, columns in mapped_data_types.items():
-                if not columns:
-                    continue
-
-                # Construct the condition
-                condition = f"objective = {objective}"
-                informationType = f"{info_type.value}"
-                # Query the ruleset
-                query = "SELECT * FROM rules WHERE condition = %s AND information_type = %s LIMIT 1"
-                cursor.execute(query, (condition, informationType))
-                rules_fetched = cursor.fetchall()  # Fetch all matching rules
-                # Removing negative feedbacks
-                for rule in rules_fetched:
-                    # Removing negative feedbacks
-                    if rule[0] not in negative_feedback:
-                        rule_dict = responseParser(cursor.description, rule)
-                        if rule[0] in positive_feedback:
-                            rules.insert(
-                                0,
-                                {
-                                    "column": [{col1: cat1}, {col2: cat2}],
-                                    "rule": rule_dict,
-                                    "action": rule_dict["action"],
-                                },
-                            )
-                        else:
-                            rules.append(
-                                {
-                                    "column": [{col1: cat1}, {col2: cat2}],
-                                    "rule": rule_dict,
-                                    "action": rule_dict["action"],
-                                }
-                            )
-        return rules
-    except Exception as e:
-        print(e)
+            else:
+                rules.append(
+                    {
+                        "column": columns,
+                        "rule": rule_dict,
+                        "action": rule_dict["action"],
+                    }
+                )
+    return rules
 
 
 # Define the function to map data types of columns
@@ -198,6 +267,7 @@ def map_data_types(data_types_dict):
         DataTypeCategory.DATES: [],
         DataTypeCategory.BOOLEAN: [],
         DataTypeCategory.UNKNOWN: [],
+        DataTypeCategory.WORDS: [],
     }
 
     # Extract and map data types
@@ -205,7 +275,10 @@ def map_data_types(data_types_dict):
         dtype_str = str(dtype)
         if dtype_str in type_mapping[DataTypeCategory.NUMBERS]:
             mapped_columns[DataTypeCategory.NUMBERS].append(column)
-        elif dtype_str in type_mapping[DataTypeCategory.CATEGORIES]:
+        elif (
+            dtype_str in type_mapping[DataTypeCategory.CATEGORIES]
+            or dtype_str in type_mapping[DataTypeCategory.BOOLEAN]
+        ):
             mapped_columns[DataTypeCategory.CATEGORIES].append(column)
         elif dtype_str in type_mapping[DataTypeCategory.DATES]:
             mapped_columns[DataTypeCategory.DATES].append(column)
@@ -221,12 +294,15 @@ def map_data_types_to_info_type(data_types):
     mapped_data_types = {}
 
     for col, dtype in data_types.items():
-        for category, types in type_mapping.items():
-            if dtype in types:
-                mapped_data_types[col] = category
-                break
+        if dtype == "object":
+            print("hey")
         else:
-            mapped_data_types[col] = "unknown"
+            for category, types in type_mapping.items():
+                if dtype in types:
+                    mapped_data_types[col] = category
+                    break
+            else:
+                mapped_data_types[col] = "unknown"
 
     return mapped_data_types
 

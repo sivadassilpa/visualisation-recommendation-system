@@ -28,6 +28,13 @@ const RuleForm: React.FC = () => {
     "Stacked Bar Chart",
     "Pie Chart",
     "Clustered Bar Chart",
+    "Histogram",
+    "Heatmap",
+    "Donut Chart",
+    "Tree Map",
+    "Geographic",
+    "Word Cloud",
+    "Table",
   ];
 
   const informationTypes = [
@@ -37,6 +44,7 @@ const RuleForm: React.FC = () => {
     "dates",
     "boolean",
     "unknown",
+    "words",
   ];
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
