@@ -5,6 +5,17 @@ import numpy as np
 from backend.factories.visualization_factory import ChartFactory
 
 
+def convert_int64_to_int(obj):
+    if isinstance(obj, dict):
+        return {k: convert_int64_to_int(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [convert_int64_to_int(i) for i in obj]
+    elif isinstance(obj, np.int64):
+        return int(obj)
+    else:
+        return obj
+
+
 def profile_data(file_path):
     df = pd.read_csv(file_path)
     df = identify_data_type(df)
@@ -111,7 +122,7 @@ def extract_profile(file_path, profile, selected_columns):
 
     # Update categorical_vars to "bool"
     for column in new_profile["categorical_vars"]:
-        new_profile["data_types"][column] = "bool"
+        new_profile["data_types"][column] = "categories"
     return new_profile
 
 

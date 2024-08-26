@@ -97,7 +97,10 @@ def find_matching_rule(questionnaire, data_profile, user_id, dataProfileId):
 
         objective = questionnaire["objective"]
 
-        if objective == "Understanding general trends (Exploratory Data Analysis)":
+        if (
+            objective
+            == "Exploratory Data Analysis (Summarize main characteristics of data)"
+        ):
             rules = handleEDAObjective(
                 data_profile, objective, negative_feedback, positive_feedback, rules
             )
@@ -116,32 +119,74 @@ def find_matching_rule(questionnaire, data_profile, user_id, dataProfileId):
                 info_types = re.split(r"\sAND\s|\sOR\s", rule["information_type"])
                 columnDetails = []
                 tempInfoTypes = info_types.copy()
-                for info_type in info_types:
-                    for key, dtypes in mapped_data_types.items():
-                        if info_type in key.value and len(dtypes) > 0:
-                            tempInfoTypes.remove(info_type)
-                            columnDetails.extend(
-                                [
-                                    {dtype: key.value}
-                                    for dtype in dtypes
-                                    if key.value == info_type
-                                ]
-                            )
-                            print("info", tempInfoTypes)
-                if len(tempInfoTypes) == 0:
-                    formattedRules[index]["columnDetails"] = columnDetails
-                    current_rule = [rules_fetched[index]]
-                    rules = returnFormattedRules(
-                        current_rule,
-                        negative_feedback,
-                        positive_feedback,
-                        rules,
-                        columnDetails,
-                    )
-        rules = combine_word_cloud_entries(rules)
+                if rule["action"] == "Clustered Bar Chart":
+                    number_columns = mapped_data_types[DataTypeCategory.NUMBERS]
+                    category_columns = mapped_data_types[DataTypeCategory.CATEGORIES]
+                    for category in category_columns:
+                        column = []
+                        column.append({category: DataTypeCategory.CATEGORIES})
+                        for number in number_columns:
+                            column.append({number: DataTypeCategory.NUMBERS})
+                        columnDetails.append(column)
+                    for columnSet in columnDetails:
+                        formattedRules[index]["columnDetails"] = columnSet
+                        current_rule = [rules_fetched[index]]
+                        rules = returnFormattedRules(
+                            current_rule,
+                            negative_feedback,
+                            positive_feedback,
+                            rules,
+                            columnSet,
+                        )
+
+                else:
+                    for info_type in info_types:
+                        for key, dtypes in mapped_data_types.items():
+                            if info_type in key.value and len(dtypes) > 0:
+                                tempInfoTypes.remove(info_type)
+                                columnDetails.extend(
+                                    [
+                                        {dtype: key.value}
+                                        for dtype in dtypes
+                                        if key.value == info_type
+                                    ]
+                                )
+                                print("info", tempInfoTypes)
+                    if len(tempInfoTypes) == 0:
+                        formattedRules[index]["columnDetails"] = columnDetails
+                        current_rule = [rules_fetched[index]]
+                        rules = returnFormattedRules(
+                            current_rule,
+                            negative_feedback,
+                            positive_feedback,
+                            rules,
+                            columnDetails,
+                        )
+
+        rules = crossVerify(rules)
         return rules
     except Exception as e:
         print(e)
+
+
+def crossVerify(rules):
+    # Create a new list to store valid rules
+    valid_rules = []
+
+    for rule in rules:
+        if rule["action"] == "Scatter Plot":
+            # Cross check if data is sufficient for scatter plot
+            if len(rule["column"]) > 1:
+                valid_rules.append(rule)
+        elif rule["action"] == "Histogram" and len(rule["column"]) > 1:
+            for column in rule["column"]:
+                valid_rules.append(
+                    {"column": [column], "rule": rule["rule"], "action": rule["action"]}
+                )
+        else:
+            valid_rules.append(rule)
+
+    return valid_rules
 
 
 def combine_word_cloud_entries(data):
@@ -170,6 +215,24 @@ def handleEDAObjective(
     # For EDA, we need the analysis of all the columns
     mapped_data_types = map_data_types_to_info_type(data_profile["data_types"])
     all_columns = [(col, category) for col, category in mapped_data_types.items()]
+    all_columns = [(col, category) for col, category in mapped_data_types.items()]
+
+    # Handle single columns
+    for col, cat in all_columns:
+        condition = f"objective = {objective}"
+        infoType = cat.value
+
+        # Query the ruleset for single column
+        rules_fetched = returnRulesFromDB(condition, infoType)
+        if rules_fetched != []:
+            columns = [{col: cat}]
+            rules = returnFormattedRules(
+                rules_fetched,
+                negative_feedback,
+                positive_feedback,
+                rules,
+                columns,
+            )
     # Generate all pairs of columns
     column_pairs = list(itertools.combinations(all_columns, 2))
     # Loop through each pair of columns
@@ -218,9 +281,7 @@ def returnFeedbacks(user_id, dataProfileId):
 
 def returnRulesFromDB(condition, infoType=None):
     if infoType:
-        query = (
-            "SELECT * FROM rules WHERE condition = %s AND information_type = %s LIMIT 1"
-        )
+        query = "SELECT * FROM rules WHERE condition = %s AND information_type = %s"
         cursor.execute(query, (condition, infoType))
     else:
         query = "SELECT * FROM rules WHERE condition = %s"

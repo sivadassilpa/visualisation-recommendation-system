@@ -25,7 +25,7 @@ class BarChartOntology(Ontology):
                 ],
                 "axes": [
                     {"orient": "bottom", "scale": "xscale"},
-                    {"orient": "left", "scale": "yscale"},
+                    {"orient": "left", "scale": "yscale", "title": "Count"},
                 ],
                 "signals": [
                     {
@@ -48,7 +48,7 @@ class BarChartOntology(Ontology):
                     },
                     {
                         "name": "yscale",
-                        "domain": {"data": "table", "field": "amount"},
+                        "domain": {"data": "table", "field": "value"},
                         "nice": True,
                         "range": "height",
                     },
@@ -61,7 +61,7 @@ class BarChartOntology(Ontology):
                             "enter": {
                                 "x": {"scale": "xscale", "field": "category"},
                                 "width": {"scale": "xscale", "band": 1},
-                                "y": {"scale": "yscale", "field": "amount"},
+                                "y": {"scale": "yscale", "field": "value"},
                                 "y2": {"scale": "yscale", "value": 0},
                             },
                             "update": {
@@ -88,12 +88,12 @@ class BarChartOntology(Ontology):
                                 },
                                 "y": {
                                     "scale": "yscale",
-                                    "signal": "tooltip.amount",
+                                    "signal": "tooltip.value",
                                     "offset": -2,
                                 },
-                                "text": {"signal": "tooltip.amount"},
+                                "text": {"signal": "tooltip.value"},
                                 "fillOpacity": [
-                                    {"test": "isNaN(tooltip.amount)", "value": 0},
+                                    {"test": "isNaN(tooltip.value)", "value": 0},
                                     {"value": 1},
                                 ],
                             },
@@ -106,18 +106,42 @@ class BarChartOntology(Ontology):
 
     def convert_data_to_vega_format(self, data):
         # Assuming data is a pandas DataFrame
-        categories = data.columns.tolist()
-        values = []
-        for i, row in data.iterrows():
-            for category in categories:
-                values.append(
-                    {
-                        "category": category,
-                        "amount": row[category],
-                        "series": category,  # Change this if there are multiple series
-                    }
+        # Identify the boolean column from selectedColumns
+        boolean_column = next(
+            (
+                col
+                for col_dict in self.selectedColumns
+                for col, dtype in col_dict.items()
+                if dtype == DataTypeCategory.CATEGORIES.value
+            ),
+            None,
+        )
+        if boolean_column is None:
+            try:
+                boolean_column = next(
+                    (
+                        col
+                        for col_dict in self.selectedColumns
+                        for col, dtype in col_dict.items()
+                        if dtype.value == DataTypeCategory.CATEGORIES.value
+                    ),
+                    None,
                 )
-        return values
+            except Exception as e:
+                print(e)
+
+            # raise ValueError("No boolean column found in selectedColumns")
+
+        # Group by the boolean column and count occurrences of True and False
+        counts = self.data.groupby(boolean_column).size().reset_index(name="value")
+
+        # Map boolean values to string representation
+        counts["category"] = counts[boolean_column].astype(str).str.lower()
+
+        # Prepare the output in the required format
+        vega_values = counts[["category", "value"]].to_dict("records")
+
+        return vega_values
 
 
 class LineChartOntology(Ontology):
@@ -370,18 +394,30 @@ class PieChartOntology(Ontology):
         Convert the data to the format required by the Vega spec.
         Assumes data is a DataFrame with two columns: one for categories and one for values.
         """
+        # Assuming data is a pandas DataFrame
         # Identify the boolean column from selectedColumns
         boolean_column = next(
             (
                 col
                 for col_dict in self.selectedColumns
                 for col, dtype in col_dict.items()
-                if dtype == DataTypeCategory.BOOLEAN
+                if dtype == DataTypeCategory.BOOLEAN.value
             ),
             None,
         )
         if boolean_column is None:
-            raise ValueError("No boolean column found in selectedColumns")
+            try:
+                boolean_column = next(
+                    (
+                        col
+                        for col_dict in self.selectedColumns
+                        for col, dtype in col_dict.items()
+                        if dtype.value == DataTypeCategory.BOOLEAN.value
+                    ),
+                    None,
+                )
+            except Exception as e:
+                print(e)
 
         # Group by the boolean column and count occurrences of True and False
         counts = self.data.groupby(boolean_column).size().reset_index(name="value")
@@ -408,6 +444,145 @@ class PieChartOntology(Ontology):
             "y_axis": None,
             "color": "Category",
         }
+
+
+class ClusteredBarChartOntology(Ontology):
+    def __init__(self, data, chartType, selectedColumns):
+        self.data = data
+        self.chartType = chartType
+        self.selectedColumns = selectedColumns
+
+    def define(self):
+        # Convert data to the required format
+
+        categoryColumn, valueColumns = self.getColumns(self.selectedColumns)
+        values, max_stack_value = self.convert_data_to_vega_format(
+            self.data, valueColumns
+        )
+        # Creating the specification for a clustered bar chart
+        vega_spec = self.get_common_vega_spec()
+        vega_spec.update(
+            {
+                "data": [
+                    {
+                        "name": "table",
+                        "values": values,
+                        "transform": [
+                            {
+                                "type": "fold",
+                                "fields": valueColumns,
+                                "as": ["CategoryCol", "ValueCol"],
+                            },
+                            {
+                                "type": "stack",
+                                "groupby": [categoryColumn],
+                                "field": "ValueCol",
+                            },
+                        ],
+                    }
+                ],
+                "scales": [
+                    {
+                        "name": "xscale",
+                        "type": "band",
+                        "domain": {"data": "table", "field": categoryColumn},
+                        "range": "width",
+                        "padding": 0.05,
+                    },
+                    {
+                        "name": "yscale",
+                        "type": "linear",
+                        "domain": [0, max_stack_value],
+                        "nice": True,
+                        "range": "height",
+                    },
+                    {
+                        "name": "color",
+                        "type": "ordinal",
+                        "domain": {"data": "table", "field": "CategoryCol"},
+                        "range": {"scheme": "category10"},
+                    },
+                ],
+                "axes": [
+                    {"orient": "bottom", "scale": "xscale", "title": categoryColumn},
+                    {"orient": "left", "scale": "yscale", "title": "Sum"},
+                ],
+                "marks": [
+                    {
+                        "type": "rect",
+                        "from": {"data": "table"},
+                        "encode": {
+                            "enter": {
+                                "x": {"scale": "xscale", "field": categoryColumn},
+                                "width": {"scale": "xscale", "band": 1},
+                                "y": {"scale": "yscale", "field": "y0"},
+                                "y2": {"scale": "yscale", "field": "y1"},
+                                "fill": {"scale": "color", "field": "CategoryCol"},
+                                "tooltip": {
+                                    "signal": "{'"
+                                    + categoryColumn
+                                    + "': datum['"
+                                    + categoryColumn
+                                    + "'], 'CategoryCol': datum['CategoryCol'], 'ValueCol': datum['ValueCol']}"
+                                },
+                            }
+                        },
+                    }
+                ],
+                "legends": [{"fill": "color", "title": "CategoryCol"}],
+            }
+        )
+        return vega_spec
+
+    def convert_data_to_vega_format(self, data, valueColumns):
+        # Assuming data is a pandas DataFrame
+        # Identify the boolean column from selectedColumns
+        boolean_column = next(
+            (
+                col
+                for col_dict in self.selectedColumns
+                for col, dtype in col_dict.items()
+                if dtype == DataTypeCategory.CATEGORIES.value
+            ),
+            None,
+        )
+        if boolean_column is None:
+            try:
+                boolean_column = next(
+                    (
+                        col
+                        for col_dict in self.selectedColumns
+                        for col, dtype in col_dict.items()
+                        if dtype.value == DataTypeCategory.CATEGORIES.value
+                    ),
+                    None,
+                )
+            except Exception as e:
+                print(e)
+
+        # Group by the boolean column and sum the values
+        grouped_data = data.groupby(boolean_column)[valueColumns].sum().reset_index()
+
+        # Calculate the maximum stack value
+        max_stack_value = grouped_data[valueColumns].sum(axis=1).max()
+
+        # Convert the grouped DataFrame to the desired list of dictionaries format
+        vega_format_data = grouped_data.to_dict(orient="records")
+
+        return vega_format_data, max_stack_value
+
+    def getColumns(self, selectedColumns):
+        category_column = None
+        number_columns = []
+
+        for col_dict in selectedColumns:
+            for col_name, col_type in col_dict.items():
+                if col_type.value == DataTypeCategory.CATEGORIES.value:
+                    category_column = col_name
+                elif col_type.value == DataTypeCategory.NUMBERS.value:
+                    number_columns.append(col_name)
+
+        return category_column, number_columns
 
 
 class ScatterPlotOntology(Ontology):
@@ -483,6 +658,9 @@ class ScatterPlotOntology(Ontology):
                                 "opacity": {"value": 0.5},
                                 "stroke": {"value": "#4682b4"},
                                 "fill": {"value": "transparent"},
+                                "tooltip": {
+                                    "signal": f"{{'{self.keys[0]}': datum.Value1, '{self.keys[1]}': datum.Value2}}"
+                                },
                             }
                         },
                     }
@@ -724,3 +902,334 @@ class WordCloudOntology(Ontology):
         # Assuming data is a pandas DataFrame
         combined_string = " ".join(data.astype(str).values.flatten())
         return combined_string
+
+
+class HistogramOntology(Ontology):
+    def __init__(self, data, chartType, selectedColumns):
+        self.data = data
+        self.chartType = chartType
+        self.selectedColumns = selectedColumns
+
+    def define(self):
+
+        # Convert data to the required format
+        values, columnName = self.convert_data_to_vega_format(self.data)
+        minimum = min(x["u"] for x in values)
+        maximum = max(x["u"] for x in values)
+        vega_spec = self.get_common_vega_spec()
+        vega_spec.update(
+            {
+                "data": [
+                    {"name": "points", "values": values},
+                    {
+                        "name": "binned",
+                        "source": "points",
+                        "transform": [
+                            {
+                                "type": "bin",
+                                "field": "u",
+                                "extent": [minimum, maximum],
+                                "step": (maximum - minimum) / 10,
+                                "as": ["bin0", "bin1"],
+                            },
+                            {
+                                "type": "aggregate",
+                                "groupby": ["bin0", "bin1"],
+                                "ops": ["count"],
+                                "as": ["count"],
+                            },
+                        ],
+                    },
+                ],
+                "scales": [
+                    {
+                        "name": "xscale",
+                        "type": "linear",
+                        "domain": [minimum, maximum],
+                        "range": "width",
+                        "nice": True,
+                        "domainMin": minimum - ((maximum - minimum) / 10),
+                    },
+                    {
+                        "name": "yscale",
+                        "type": "linear",
+                        "domain": {"data": "binned", "field": "count"},
+                        "range": "height",
+                        "nice": True,
+                        "zero": True,
+                    },
+                ],
+                "axes": [
+                    {
+                        "orient": "bottom",
+                        "scale": "xscale",
+                        "title": columnName,
+                        "labelAngle": -45,
+                        "labelAlign": "right",
+                    },
+                    {"orient": "left", "scale": "yscale", "title": "Frequency"},
+                ],
+                "marks": [
+                    {
+                        "type": "rect",
+                        "from": {"data": "binned"},
+                        "encode": {
+                            "enter": {
+                                "x": {"scale": "xscale", "field": "bin0", "offset": 1},
+                                "x2": {
+                                    "scale": "xscale",
+                                    "field": "bin1",
+                                    "offset": -1,
+                                },
+                                "y": {"scale": "yscale", "field": "count"},
+                                "y2": {"scale": "yscale", "value": 0},
+                                "fill": {"value": "steelblue"},
+                                "tooltip": {
+                                    "signal": "{'"
+                                    + columnName
+                                    + "': format(datum.bin0, '.1f') + ' - ' + format(datum.bin1, '.1f'), 'Frequency': datum.count}"
+                                },
+                            },
+                            "update": {"fillOpacity": {"value": 1}},
+                            "hover": {"fillOpacity": {"value": 0.5}},
+                        },
+                    }
+                ],
+            }
+        )
+        return vega_spec
+
+    def convert_data_to_vega_format(self, data):
+        # Assuming data is a pandas DataFrame
+        categories = data.columns.tolist()
+        values = []
+        for i, row in data.iterrows():
+            for category in categories:
+                values.append(
+                    {
+                        # "category": category,
+                        "u": row[category],
+                    }
+                )
+        return values, category
+
+
+class TableChartOntology:
+    def __init__(self, data, chartType, selectedColumns):
+        self.data = data
+        self.chartType = chartType
+        self.selectedColumns = selectedColumns
+
+    def define(self):
+        values = self.convert_data_to_vega_format(self.data)
+        columns = self.data.columns.tolist()
+        vega_spec = self.get_common_vega_spec(columns, values)
+        return vega_spec
+
+    def convert_data_to_vega_format(self, data):
+        # Convert the DataFrame to a list of dictionaries
+        return data.to_dict(orient="records")
+
+    def get_common_vega_spec(self, columns, values):
+        # Define the Vega spec with dynamic columns
+        signals = [
+            {
+                "name": "rowsToDisplay",
+                "description": "The number of rows displayed in the table (visible without scrolling)",
+                "value": 10,
+            },
+            {"name": "rowHeight", "description": "Row height in pixels", "value": 40},
+            {
+                "name": "scrollAreaHeight",
+                "description": "Scroll area height in pixels",
+                "update": "rowHeight*rowsToDisplay",
+            },
+            {
+                "name": "scrollBarWidth",
+                "description": "Scrollbar width in pixels",
+                "init": "12",
+            },
+            {
+                "name": "scrollBarHeight",
+                "description": "Scrollbar height: Dynamically calculated based on the percentage of visible rows out of all data rows, with a range limited to minimum and maximum values",
+                "init": "clamp((rowHeight*rowsToDisplay)*rowsToDisplay/length(data('table')),30,600)",
+            },
+            {
+                "name": "scrollPositionMax",
+                "update": "length(data('table'))-rowsToDisplay+1",
+            },
+            {
+                "name": "scrollbarMouseDragY",
+                "init": "0",
+                "on": [
+                    {
+                        "events": "[@rect-scrollbar:pointerdown, window:pointerup] > window:pointermove",
+                        "update": "clamp(y(),1,scrollAreaHeight)",
+                    }
+                ],
+            },
+            {
+                "name": "scrollPosition",
+                "description": "Scrollbar Position: The scrollbar responds to dragging the scrollbar with a mouse, mouse wheel scrolling, and the Home, End, Page Up, Page Down, Arrow Up, and Arrow Down buttons",
+                "value": 1,
+                "on": [
+                    {
+                        "events": {"type": "wheel", "consume": True},
+                        "update": "clamp(round(scrollPosition+event.deltaY/abs(event.deltaY)*pow(1.0001, event.deltaY*pow(16, event.deltaMode)),0),1,scrollPositionMax)",
+                    },
+                    {
+                        "events": "window:keydown",
+                        "update": "event.code=='Home'?1:event.code=='End'?scrollPositionMax:scrollPosition",
+                    },
+                    {
+                        "events": "window:keydown",
+                        "update": "clamp(event.code=='PageDown'?(scrollPosition+rowsToDisplay):event.code=='PageUp'?(scrollPosition-rowsToDisplay):scrollPosition,1,scrollPositionMax)",
+                    },
+                    {
+                        "events": "window:keydown",
+                        "update": "clamp(event.code=='ArrowDown'?(scrollPosition+1):event.code=='ArrowUp'?(scrollPosition-1):scrollPosition,1,scrollPositionMax)",
+                    },
+                    {
+                        "events": "[@rect-scrollbar:pointerdown, window:pointerup] > window:pointermove",
+                        "update": "clamp(round(invert('scaleScrollBarY',scrollbarMouseDragY),0),1,scrollPositionMax)",
+                    },
+                ],
+            },
+            {
+                "name": "scrollbarFillOpacity",
+                "value": 0.2,
+                "on": [
+                    {"events": "view:pointerover", "update": "0.4"},
+                    {"events": "view:pointerout", "update": "0.2"},
+                ],
+            },
+        ]
+
+        scales = [
+            {
+                "name": "scaleY",
+                "type": "band",
+                "domain": {"data": "table", "field": "index", "sort": True},
+                "range": [
+                    {"signal": "0"},
+                    {"signal": "rowHeight*length(data('table'))"},
+                ],
+            },
+            {
+                "name": "scaleScrollBarY",
+                "type": "linear",
+                "domain": [1, {"signal": "scrollPositionMax"}],
+                "range": [
+                    {"signal": "0"},
+                    {"signal": "rowHeight*rowsToDisplay-scrollBarHeight-1"},
+                ],
+            },
+            {
+                "name": "scaleRowStripeColors",
+                "type": "ordinal",
+                "domain": [0, 1],
+                "range": ["#FFFFFF", "#EAEAEA"],
+            },
+        ]
+
+        marks = [
+            {
+                "name": "rule-scrolltrack-1",
+                "type": "rule",
+                "encode": {
+                    "update": {
+                        "x": {"signal": "width-scrollBarWidth-2"},
+                        "x2": {"signal": "width-scrollBarWidth-2"},
+                        "y": {"signal": "0"},
+                        "y2": {"signal": "scrollAreaHeight"},
+                        "stroke": {"signal": "'black'"},
+                        "strokeWidth": {"signal": "0.2"},
+                    }
+                },
+            },
+            {
+                "name": "rule-scrolltrack-2",
+                "type": "rule",
+                "encode": {
+                    "update": {
+                        "x": {"signal": "width"},
+                        "x2": {"signal": "width"},
+                        "y": {"signal": "0"},
+                        "y2": {"signal": "scrollAreaHeight"},
+                        "stroke": {"signal": "'black'"},
+                        "strokeWidth": {"signal": "0.2"},
+                    }
+                },
+            },
+            {
+                "name": "rect-scrollbar",
+                "type": "rect",
+                "encode": {
+                    "update": {
+                        "x": {"signal": "width-scrollBarWidth-1"},
+                        "y": {"scale": "scaleScrollBarY", "signal": "scrollPosition"},
+                        "width": {"signal": "scrollBarWidth"},
+                        "height": {"signal": "scrollBarHeight"},
+                        "fill": {"value": "#666666"},
+                        "fillOpacity": {"signal": "scrollbarFillOpacity"},
+                    }
+                },
+            },
+            {
+                "name": "rect-table-cell",
+                "type": "rect",
+                "from": {"data": "table"},
+                "encode": {
+                    "update": {
+                        "x": {"signal": "0"},
+                        "x2": {"signal": "width-scrollBarWidth-3"},
+                        "y": {"scale": "scaleY", "field": "index", "band": 0},
+                        "height": {"signal": "rowHeight"},
+                        "fill": {
+                            "scale": "scaleRowStripeColors",
+                            "signal": "(ceil(datum.index/2,0)==datum.index/2)?1:0",
+                        },
+                    }
+                },
+            },
+        ]
+
+        # Add text marks for each column dynamically
+        for i, column in enumerate(columns):
+            marks.append(
+                {
+                    "name": f"text-cell-content-{i}",
+                    "type": "text",
+                    "from": {"data": "table"},
+                    "encode": {
+                        "update": {
+                            "text": {"signal": f"datum['{column}']"},
+                            "dx": {"value": 5},
+                            "y": {"scale": "scaleY", "field": "index", "band": 0.5},
+                            "x": {"signal": f"{i * 100}"},
+                            "baseline": {"value": "middle"},
+                            "align": {"value": "left"},
+                        }
+                    },
+                }
+            )
+
+        vega_spec = {
+            "$schema": "https://vega.github.io/schema/vega/v5.json",
+            "description": "An example of a simple table with a scrollbar",
+            "width": 300,
+            "height": 400,
+            "padding": 5,
+            "background": "#FFFFFF",
+            "config": {
+                "title": {"font": "Tahoma", "fontSize": 18},
+                "text": {"font": "Tahoma", "fontSize": 16},
+            },
+            "signals": signals,
+            "data": [{"name": "table", "values": values}],
+            "scales": scales,
+            "title": {"text": "Scrollbar Example"},
+            "marks": marks,
+        }
+
+        return vega_spec

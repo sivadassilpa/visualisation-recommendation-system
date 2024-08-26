@@ -1,0 +1,21 @@
+Book_Title,Genre,Borrow_Date,Return_Date,Borrower_Age_Group,Returned_On_Time (Yes/No),No. of times borrowed
+"""The Great Gatsby""",Fiction,10-01-2024,24-01-2024,Adult (18-60),Yes,2
+"""A Brief History of Time""",Science,15-01-2024,30-01-2024,Adult (18-60),No,5
+"""The Cat in the Hat""",Children's,01-02-2024,05-02-2024,Child (0-12),Yes,6
+"""To Kill a Mockingbird""",Fiction,10-02-2024,24-02-2024,Adult (18-60),Yes,1
+"""The Very Hungry Caterpillar""",Children's,05-03-2024,10-03-2024,Child (0-12),Yes,1
+"""1984""",Fiction,12-03-2024,26-03-2024,Young Adult (13-17),Yes,2
+"""Moby Dick""",Fiction,01-04-2024,15-04-2024,Adult (18-60),No,3
+"""The Hobbit""",Fantasy,20-04-2024,05-05-2024,Adult (18-60),Yes,5
+"""The Catcher in the Rye""",Fiction,10-05-2024,20-05-2024,Young Adult (13-17),Yes,5
+"""Goodnight Moon""",Children's,15-05-2024,17-05-2024,Child (0-12),Yes,1
+"""Sapiens: A Brief History of Humankind""",Fiction,01-06-2024,14-06-2024,Adult (18-60),No,1
+"""Harry Potter and the Sorcerer's Stone""",Fantasy,15-06-2024,30-06-2024,Young Adult (13-17),Yes,1
+"""The Odyssey""",Science,01-07-2024,10-07-2024,Adult (18-60),Yes,2
+"""Charlotte's Web""",Children's,15-07-2024,20-07-2024,Child (0-12),Yes,1
+"""Brave New World""",Science,01-08-2024,14-08-2024,Young Adult (13-17),Yes,3
+"""Pride and Prejudice""",Science,10-08-2024,24-08-2024,Adult (18-60),No,4
+"""The Secret Garden""",Children's,01-09-2024,10-09-2024,Child (0-12),Yes,5
+"""The Lord of the Rings""",Children's,10-09-2024,24-09-2024,Adult (18-60),Yes,2
+"""Animal Farm""",Science,01-10-2024,10-10-2024,Young Adult (13-17),Yes,1
+"""Green Eggs and Ham""",Children's,10-10-2024,12-10-2024,Child (0-12),Yes,11

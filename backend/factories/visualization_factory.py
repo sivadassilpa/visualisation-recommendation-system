@@ -5,6 +5,9 @@ from backend.ontologies.chart_ontology import (
     ScatterPlotOntology,
     HeatmapOntology,
     WordCloudOntology,
+    TableChartOntology,
+    HistogramOntology,
+    ClusteredBarChartOntology,
 )
 from abc import ABC, abstractmethod
 
@@ -24,10 +27,16 @@ class ChartFactory:
             return HeatmapOntology(selectedData, chart_type, selectedColumns)
         elif chart_type == "Word Cloud":
             return WordCloudOntology(selectedData, chart_type, selectedColumns)
+        elif chart_type == "Histogram":
+            return HistogramOntology(selectedData, chart_type, selectedColumns)
         # Add other chart types here
+        elif chart_type == "Table":
+            return TableChartOntology(selectedData, chart_type, selectedColumns)
+            # raise ValueError(f"Unknown chart type: {chart_type}")
+        elif chart_type == "Clustered Bar Chart":
+            return ClusteredBarChartOntology(selectedData, chart_type, selectedColumns)
         else:
             return LineChartOntology(selectedData, chart_type, selectedColumns)
-            # raise ValueError(f"Unknown chart type: {chart_type}")
 
 
 class VisualizationFactory:

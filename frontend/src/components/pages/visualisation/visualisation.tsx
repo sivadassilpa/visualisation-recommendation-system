@@ -55,7 +55,6 @@ const Visualisation: FunctionComponent<{ vegaObject?: any[] }> = (props) => {
             const vegaObject = object.vegaSpec;
             const ruleId = object.ruleId;
             const { title, ...vegaSpec } = vegaObject; // Destructure to remove title from object
-            console.log(vegaSpec);
             return (
               <Grid
                 key={index}

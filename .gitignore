@@ -292,3 +292,8 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 .idea/
 data/notes
+/uploads
+Questionnaire for Thesis Evaluation.docx
+~$estionnaire for Thesis Evaluation.docx
+~WRL0832.tmp
+uploads/thesis_test.csv

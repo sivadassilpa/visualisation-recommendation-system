@@ -1,9 +1,21 @@
 import { Grid } from "@mui/material";
-import { FunctionComponent, useState } from "react";
+import { FunctionComponent, useEffect, useState } from "react";
 import FileUpload from "../fileUpload/fileUpload";
 import Visualisation from "../visualisation/visualisation";
+import { userDetailsStore } from "../../store/userStore";
 
 const MainPage: FunctionComponent = () => {
+  const setUserDetails = userDetailsStore((state) => state.setUserDetails);
+  const userDetails = userDetailsStore((state) => state.userDetails);
+  useEffect(() => {
+    if (userDetails == null)
+      //default user is user2
+      setUserDetails({
+        username: "User2",
+        password: "User2@123",
+        userId: 2,
+      });
+  }, [setUserDetails, userDetails]);
   const [showVisualisation, setShowVisualisation] = useState(false);
   const [vegaObject, setVegaObject] = useState<any[]>([]);
   return (

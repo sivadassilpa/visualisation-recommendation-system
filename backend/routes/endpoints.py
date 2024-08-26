@@ -1,6 +1,7 @@
 import json
 import os
 from flask import Blueprint, current_app, jsonify, request
+import numpy as np
 from werkzeug.security import check_password_hash
 from backend.database import connect_to_db
 from backend.utils.fileUpload import (
@@ -13,6 +14,7 @@ from backend.utils.profiler import (
     dataForSelectedColumns,
     extract_profile,
     profile_data,
+    convert_int64_to_int,
 )
 from backend.utils.responseParser import responseParser
 from werkzeug.utils import secure_filename
@@ -191,7 +193,7 @@ def upload_file():
             )
             vega_specs.append({"vegaSpec": vega_spec, "ruleId": rule["rule"]["id"]})
         # data_profile is the Questionnaire response and profile is the metadata profiled
-
+        vega_specs = convert_int64_to_int(vega_specs)
         return (
             jsonify(
                 {

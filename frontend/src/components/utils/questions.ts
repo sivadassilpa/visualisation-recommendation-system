@@ -13,7 +13,7 @@ export const dataLevelQuestions: IQuestion[] = [
     title: "objective",
     question: "What is your primary objective with this data?",
     options: [
-      "Understanding general trends (Exploratory Data Analysis)",
+      "Exploratory Data Analysis (Summarize main characteristics of data)",
       "Comparing different groups or categories (Comparison)",
       "Tracking changes over time (Trend Analysis)",
       "Identifying the distribution of data (Distribution Analysis)",

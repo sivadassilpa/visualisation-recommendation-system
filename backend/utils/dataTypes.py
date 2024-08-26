@@ -15,11 +15,11 @@ class DataTypeCategory(Enum):
 # Define a mapping of specific data types to general categories using the enum
 type_mapping = {
     DataTypeCategory.NUMBERS: ["int64", "float64"],
-    DataTypeCategory.CATEGORIES: ["object"],
+    DataTypeCategory.CATEGORIES: ["categories"],
     DataTypeCategory.DATES: ["datetime64[ns]"],
     DataTypeCategory.BOOLEAN: ["bool"],
     DataTypeCategory.WORDS: ["words"],
-    DataTypeCategory.UNKNOWN: [],
+    DataTypeCategory.UNKNOWN: ["object"],
 }
 
 heatmapColorOptions = [
