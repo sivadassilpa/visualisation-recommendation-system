@@ -122,22 +122,23 @@ def find_matching_rule(questionnaire, data_profile, user_id, dataProfileId):
                 if rule["action"] == "Clustered Bar Chart":
                     number_columns = mapped_data_types[DataTypeCategory.NUMBERS]
                     category_columns = mapped_data_types[DataTypeCategory.CATEGORIES]
-                    for category in category_columns:
-                        column = []
-                        column.append({category: DataTypeCategory.CATEGORIES})
-                        for number in number_columns:
-                            column.append({number: DataTypeCategory.NUMBERS})
-                        columnDetails.append(column)
-                    for columnSet in columnDetails:
-                        formattedRules[index]["columnDetails"] = columnSet
-                        current_rule = [rules_fetched[index]]
-                        rules = returnFormattedRules(
-                            current_rule,
-                            negative_feedback,
-                            positive_feedback,
-                            rules,
-                            columnSet,
-                        )
+                    if len(number_columns) > 1:
+                        for category in category_columns:
+                            column = []
+                            column.append({category: DataTypeCategory.CATEGORIES})
+                            for number in number_columns:
+                                column.append({number: DataTypeCategory.NUMBERS})
+                            columnDetails.append(column)
+                        for columnSet in columnDetails:
+                            formattedRules[index]["columnDetails"] = columnSet
+                            current_rule = [rules_fetched[index]]
+                            rules = returnFormattedRules(
+                                current_rule,
+                                negative_feedback,
+                                positive_feedback,
+                                rules,
+                                columnSet,
+                            )
 
                 else:
                     for info_type in info_types:
@@ -225,7 +226,7 @@ def handleEDAObjective(
         # Query the ruleset for single column
         rules_fetched = returnRulesFromDB(condition, infoType)
         if rules_fetched != []:
-            columns = [{col: cat}]
+            columns = [{col: cat.value}]
             rules = returnFormattedRules(
                 rules_fetched,
                 negative_feedback,
@@ -255,7 +256,7 @@ def handleEDAObjective(
             )
             rules_fetched = returnRulesFromDB(condition, infoType)
         if rules_fetched != []:
-            columns = [{col1: cat1}, {col2: cat2}]
+            columns = [{col1: cat1.value}, {col2: cat2.value}]
             rules = returnFormattedRules(
                 rules_fetched,
                 negative_feedback,

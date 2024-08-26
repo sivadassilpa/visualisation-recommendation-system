@@ -13,7 +13,13 @@ class BarChartOntology(Ontology):
     def define(self):
 
         # Convert data to the required format
-        values = self.convert_data_to_vega_format(self.data)
+        categoryColumn, valueColumns = self.getColumns(self.selectedColumns)
+        values = self.convert_data_to_vega_format(self.data, valueColumns)
+
+        title = valueColumns[0] if len(valueColumns) > 0 else "Count"
+        if len(valueColumns) > 0:
+            columns_to_keep = categoryColumn + [valueColumns[0]]
+            self.data = self.data[columns_to_keep]
         vega_spec = self.get_common_vega_spec()
         vega_spec.update(
             {
@@ -24,8 +30,8 @@ class BarChartOntology(Ontology):
                     },
                 ],
                 "axes": [
-                    {"orient": "bottom", "scale": "xscale"},
-                    {"orient": "left", "scale": "yscale", "title": "Count"},
+                    {"orient": "bottom", "scale": "xscale", "title": categoryColumn[0]},
+                    {"orient": "left", "scale": "yscale", "title": title},
                 ],
                 "signals": [
                     {
@@ -104,7 +110,7 @@ class BarChartOntology(Ontology):
         )
         return vega_spec
 
-    def convert_data_to_vega_format(self, data):
+    def convert_data_to_vega_format(self, data, valueColumns):
         # Assuming data is a pandas DataFrame
         # Identify the boolean column from selectedColumns
         boolean_column = next(
@@ -131,17 +137,45 @@ class BarChartOntology(Ontology):
                 print(e)
 
             # raise ValueError("No boolean column found in selectedColumns")
+        if len(valueColumns) > 0:
+            # Group by the boolean column and sum the values from valueColumns
+            grouped_data = (
+                data.groupby(boolean_column)[valueColumns].sum().reset_index()
+            )
 
-        # Group by the boolean column and count occurrences of True and False
-        counts = self.data.groupby(boolean_column).size().reset_index(name="value")
+            # Convert to desired format with category and summed values
+            vega_values = []
+            for _, row in grouped_data.iterrows():
+                category = row[boolean_column]
+                for value_column in valueColumns:
+                    vega_values.append(
+                        {"category": category, "value": row[value_column]}
+                    )
+        else:
 
-        # Map boolean values to string representation
-        counts["category"] = counts[boolean_column].astype(str).str.lower()
+            # Group by the boolean column and count occurrences of True and False
+            counts = self.data.groupby(boolean_column).size().reset_index(name="value")
 
-        # Prepare the output in the required format
-        vega_values = counts[["category", "value"]].to_dict("records")
+            # Map boolean values to string representation
+            counts["category"] = counts[boolean_column]
+
+            # Prepare the output in the required format
+            vega_values = counts[["category", "value"]].to_dict("records")
 
         return vega_values
+
+    def getColumns(self, selectedColumns):
+        category_column = []
+        number_columns = []
+
+        for col_dict in selectedColumns:
+            for col_name, col_type in col_dict.items():
+                if col_type == DataTypeCategory.CATEGORIES.value:
+                    category_column.append(col_name)
+                elif col_type == DataTypeCategory.NUMBERS.value:
+                    number_columns.append(col_name)
+
+        return category_column, number_columns
 
 
 class LineChartOntology(Ontology):
@@ -152,7 +186,10 @@ class LineChartOntology(Ontology):
 
     def define(self):
         # Convert data to the required format
-        values = self.convert_data_to_vega_format(self.data)
+        datesColumn, valueColumns = self.getColumns(self.selectedColumns)
+        values, titlex, titley = self.convert_data_to_vega_format(
+            self.data, valueColumns
+        )
         vega_spec = self.get_common_vega_spec()
         vega_spec.update(
             {
@@ -163,8 +200,14 @@ class LineChartOntology(Ontology):
                     }
                 ],
                 "axes": [
-                    {"orient": "bottom", "scale": "xscale"},
-                    {"orient": "left", "scale": "yscale"},
+                    {
+                        "orient": "bottom",
+                        "scale": "x",
+                        "title": titlex,
+                        "labelAngle": -45,
+                        "labelAlign": "right",
+                    },
+                    {"orient": "left", "scale": "y", "title": titley},
                 ],
                 "scales": [
                     {
@@ -208,10 +251,6 @@ class LineChartOntology(Ontology):
                         },
                     },
                 ],
-                "axes": [
-                    {"orient": "bottom", "scale": "x"},
-                    {"orient": "left", "scale": "y"},
-                ],
                 "legends": [
                     {
                         "fill": "color",
@@ -241,6 +280,9 @@ class LineChartOntology(Ontology):
                                         "strokeOpacity": {"value": 1},
                                     },
                                     "hover": {"strokeOpacity": {"value": 0.5}},
+                                    "tooltip": {  # Add tooltip here
+                                        "signal": "{'Date': datum.x, 'Value': datum.y, 'Category': datum.c}"
+                                    },
                                 },
                             }
                         ],
@@ -250,16 +292,65 @@ class LineChartOntology(Ontology):
         )
         return vega_spec
 
-    def convert_data_to_vega_format(self, data):
-        """
-        Convert the data to the format required by the Vega spec.
-        Assumes data is a DataFrame with column names that can be used directly.
-        """
-        vega_values = []
-        for i, row in data.iterrows():
-            for col in data.columns:
-                vega_values.append({"x": i, "y": row[col], "c": col})
-        return vega_values
+    # def convert_data_to_vega_format(self, data):
+    #     """
+    #     Convert the data to the format required by the Vega spec.
+    #     Assumes data is a DataFrame with column names that can be used directly.
+    #     """
+    #     vega_values = []
+    #     # HEre to do, if date is the datatype, then make it the x axis and value as y if any or else sum.
+    #     for i, row in data.iterrows():
+    #         for col in data.columns:
+    #             vega_values.append({"x": i, "y": row[col], "c": col})
+    #     return vega_values
+
+    def convert_data_to_vega_format(self, data, valueColumns):
+        titlex = "index"
+        titley = "value"
+        date_Column = next(
+            (
+                col
+                for col_dict in self.selectedColumns
+                for col, dtype in col_dict.items()
+                if dtype == DataTypeCategory.DATES.value
+            ),
+            None,
+        )
+        if date_Column:
+            if len(valueColumns) > 0:
+                # Group by the boolean column and sum the values from valueColumns
+                grouped_data = (
+                    data.groupby(date_Column)[valueColumns].sum().reset_index()
+                )
+
+                # Convert to desired format with category and summed values
+                vega_values = []
+                for _, row in grouped_data.iterrows():
+                    category = row[date_Column]
+                    for value_column in valueColumns:
+                        vega_values.append(
+                            {"x": category, "y": row[value_column], "c": value_column}
+                        )
+            else:
+
+                # Group by the boolean column and count occurrences of True and False
+                counts = self.data.groupby(date_Column).size().reset_index(name="y")
+
+                # Map boolean values to string representation
+                counts["x"] = counts[date_Column]
+                counts["c"] = "Total Count"
+
+                # Prepare the output in the required format
+                vega_values = counts[["x", "y", "c"]].to_dict("records")
+                titlex = date_Column
+                titley = "Total Count"
+        else:
+            vega_values = []
+            for i, row in data.iterrows():
+                for col in data.columns:
+                    vega_values.append({"x": i, "y": row[col], "c": col})
+
+        return vega_values, titlex, titley
 
     def get_attributes(self):
         return {
@@ -268,6 +359,19 @@ class LineChartOntology(Ontology):
             "color": "Category",
             "line_style": ["solid", "dashed", "dotted"],
         }
+
+    def getColumns(self, selectedColumns):
+        dates_Column = []
+        number_columns = []
+
+        for col_dict in selectedColumns:
+            for col_name, col_type in col_dict.items():
+                if col_type == DataTypeCategory.DATES.value:
+                    dates_Column.append(col_name)
+                elif col_type == DataTypeCategory.NUMBERS.value:
+                    number_columns.append(col_name)
+
+        return dates_Column, number_columns
 
 
 class PieChartOntology(Ontology):
@@ -459,6 +563,7 @@ class ClusteredBarChartOntology(Ontology):
         values, max_stack_value = self.convert_data_to_vega_format(
             self.data, valueColumns
         )
+
         # Creating the specification for a clustered bar chart
         vega_spec = self.get_common_vega_spec()
         vega_spec.update(
