@@ -1,31 +1,149 @@
-# visualisation-recommendation-system
+# Visualisation Recommendation System
 
-## Server Setup
+This project is a Visualisation Recommendation System designed to help users generate personalized data visualizations based on their profiles and preferences. The system consists of a backend service powered by Python and Auto-Sklearn, and a frontend built with React.
 
-1. Navigate to the `./server/` directory.
-2. Run the following command to start the server:
+## Getting Started
 
-```
-pip install auto-sklearn
+Follow the steps below to set up the project and run it locally.
 
-python app.py
-```
+### Prerequisites
 
-3. The server will be running at: [http://127.0.0.1:5000](http://127.0.0.1:5000)
+- Python 3.x
+- Node.js and npm
+- PostgreSQL
 
-## Client Setup
+### DB Setup
 
-1. Navigate to the `./client/` directory.
-2. Run the following command to install dependencies:
+Before starting the application, you need to populate the database with the required tables and data.
 
-```
-npm install
-```
+1. **Connect to your PostgreSQL database:**
 
-3. Run the following command to start the client:
+   ```bash
+   psql -U <username> -d <database_name>
 
-```
-npm start
-```
+   ```
 
-4. The client will be running at: [http://localhost:3000](http://localhost:3000)
+2. **Create the necessary tables and import data:**
+
+   ```bash
+   -- Create the users table and populate it
+    CREATE TABLE users (
+        id SERIAL PRIMARY KEY,
+        username TEXT,
+        password_hash TEXT
+    );
+    \COPY users FROM 'data/users.csv' CSV HEADER;
+
+    -- Create the userprofile table and populate it
+    CREATE TABLE userprofile (
+        id SERIAL PRIMARY KEY,
+        userid INT,
+        familiarity TEXT,
+        profession TEXT,
+        interest TEXT,
+        country TEXT,
+        CONSTRAINT fk_user FOREIGN KEY(userid) REFERENCES users(id)
+    );
+    \COPY userprofile FROM 'data/userprofile.csv' CSV HEADER;
+
+    -- Create the rules table and populate it
+    CREATE TABLE rules (
+        id SERIAL PRIMARY KEY,
+        rule_name TEXT,
+        description TEXT,
+        condition TEXT,
+        information_type TEXT,
+        action TEXT
+    );
+    \COPY rules FROM 'data/rules.csv' CSV HEADER;
+
+    -- Create the feedback table and populate it
+    CREATE TABLE feedback (
+        id SERIAL PRIMARY KEY,
+        ruleid INT,
+        userprofileid INT,
+        dataprofileid INT,
+        preferred BOOL
+    );
+    \COPY feedback FROM 'data/feedback.csv' CSV HEADER;
+
+    -- Create the data_contexts table and populate it
+    CREATE TABLE data_contexts (
+        id SERIAL PRIMARY KEY,
+        userid INT,
+        filename TEXT,
+        objective TEXT,
+        patternsinterest TEXT,
+        groupcomparison TEXT,
+        colorpreferences TEXT,
+        usecase TEXT,
+        createdat TIMESTAMP,
+        CONSTRAINT fk_user FOREIGN KEY(userid) REFERENCES users(id)
+    );
+    \COPY data_contexts FROM 'data/data_contexts.csv' CSV HEADER;
+
+   ```
+
+3. **Start the backend server:**
+
+   ```bash
+   cd ..
+   python app.py
+
+   ```
+
+### Backend Setup
+
+1. **Clone the repository and navigate to the `backend/` directory:**
+
+   ```bash
+   git clone <repository-url>
+   cd visualisation-recommendation-system/backend
+   ```
+
+2. **Install the required Python packages:**
+
+   ```bash
+   pip install auto-sklearn
+
+   ```
+
+3. **Start the backend server:**
+
+   ```bash
+   cd ..
+   python app.py
+
+   ```
+
+### Backend Setup
+
+1. **Navigate to the frontend/ directory:**
+
+   ```bash
+   cd .\frontend\
+
+   ```
+
+2. **Install dependencies:**
+
+   ```bash
+   npm install
+
+   ```
+
+3. **Start the frontend server:**
+
+   ```bash
+   npm start
+
+   ```
+
+### Running the Application
+
+Once the backend, frontend, and database are set up, you can access the application by navigating to http://localhost:3000 in your web browser.
+
+### Troubleshooting
+
+1. Port Conflicts: Ensure no other services are running on the ports used by the backend (usually 5000) and frontend (usually 3000).
+2. Database Connection Issues: Double-check your PostgreSQL credentials and ensure the database is running.
