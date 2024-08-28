@@ -1,4 +1,20 @@
-id,username,password_hash
-1,User1,User1@123
-2,User2,User2@123
-3,User3,User3@123
+id,rule_name,description,condition,information_type,action
+6,Exploratory Data Analysis Numbers,EDA for different columns of information type numbers could be depicted using Scatter Plot or Line Chart,objective = Exploratory Data Analysis (Summarize main characteristics of data),numbers,Line Chart
+8,Exploratory Data Analysis of Numbers and Categories,EDA for different columns of information type numbers and categories could be depicted using a Bar Chart,objective = Exploratory Data Analysis (Summarize main characteristics of data),numbers AND categories,Bar Chart
+15,Tracking over time,"When the goal is to track something over time, it's better we plot using a line chart.",objective = Tracking changes over time (Trend Analysis),numbers AND dates,Line Chart
+24,Comparing different groups or categories,"When its comparing different groups or category, it is better to depict then using a bar chart.",objective = Comparing different groups or categories (Comparison),categories AND numbers,Bar Chart
+11,Exploratory Data Analysis of Numbers and Dates,Time Series Analysis,objective = Exploratory Data Analysis (Summarize main characteristics of data),numbers AND dates,Line Chart
+18,Exploratory Data Analysis Scatter Plot,Scatter Plot,objective = Identifying the distribution of data (Distribution Analysis),numbers,Scatter Plot
+7,Exploratory Data Analysis Categories,EDA for different columns of information type categories could be depicted using a clustered bar chart,objective = Exploratory Data Analysis (Summarize main characteristics of data),numbers AND categories,Bar Chart
+13,Exploratory Data Analysis of Booleans and Numbers,Pie Chart,objective = Exploratory Data Analysis (Summarize main characteristics of data),numbers AND boolean,Pie Chart
+16,Distribution Analysis,"When we need to do some Distribution Analysis, a Histogram is a good idea",objective = Identifying the distribution of data (Distribution Analysis),numbers,Histogram
+17,Exploratory Data Analysis Heatmap,HEatMAp,objective = Identifying the distribution of data (Distribution Analysis),categories AND numbers AND dates,Heatmap
+20,Word Cloud for Comparison,Comparison for word categories could be depicted using Word Cloud,objective = Comparing different groups or categories (Comparison),words,Word Cloud
+14,Comparing different groups or categories,"When its comparing different groups or category, it is better to depict then using a grouped bar chart.",objective = Comparing different groups or categories (Comparison),categories AND numbers,Clustered Bar Chart
+19,Word Cloud for EDA,EDA for word categories could be depicted using Word Cloud,objective = Exploratory Data Analysis (Summarize main characteristics of data),words,Word Cloud
+25,Tracking changes over time (Trend Analysis) Line Chart,Line Chart,objective = Tracking changes over time (Trend Analysis),dates,Line Chart
+26,Tracking changes over time (Trend Analysis) Line Chart,Line Chart,objective = Exploratory Data Analysis (Summarize main characteristics of data),dates,Line Chart
+22,Category Analysis,This is to get a count of category analysis,objective = Identifying the distribution of data (Distribution Analysis),categories,Bar Chart
+21,Category Analysis,This is to get a count of category analysis,objective = Exploratory Data Analysis (Summarize main characteristics of data),categories,Bar Chart
+23,Category Analysis,This is to get a count of category analysis,objective = Comparing different groups or categories (Comparison),categories,Bar Chart
+12,Exploratory Data Analysis of Categories and Dates,Stacked Bar Graph,objective = Exploratory Data Analysis (Summarize main characteristics of data),categories AND dates,Bar Chart

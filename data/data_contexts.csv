@@ -1,3 +1,9 @@
 id,userid,filename,objective,patternsinterest,groupcomparison,colorpreferences,usecase,createdat
+7,1,employees.csv,Exploratory Data Analysis (Summarize main characteristics of data),I prefer not to answer,I prefer not to answer,I prefer not to answer,I prefer not to answer,2024-08-23 07:59:39.25078
+1,2,thesis_test.csv,Exploratory Data Analysis (Summarize main characteristics of data),I prefer not to answer,I prefer not to answer,I prefer not to answer,I prefer not to answer,2024-05-26 19:13:30.384645
+6,2,Product_Inventory.csv,Exploratory Data Analysis (Summarize main characteristics of data),I prefer not to answer,I prefer not to answer,I prefer not to answer,I prefer not to answer,2024-08-22 17:31:09.502954
 2,1,thesis_test.csv,I prefer not to answer,I prefer not to answer,I prefer not to answer,I prefer not to answer,I prefer not to answer,2024-05-29 11:29:50.484175
-1,2,thesis_test.csv,Understanding general trends (Exploratory Data Analysis),I prefer not to answer,I prefer not to answer,I prefer not to answer,I prefer not to answer,2024-05-26 19:13:30.384645
+3,2,train_1.csv,Understanding general trends (Exploratory Data Analysis),I prefer not to answer,I prefer not to answer,I prefer not to answer,I prefer not to answer,2024-07-06 08:52:28.502853
+5,2,employees.csv,Exploratory Data Analysis (Summarize main characteristics of data),I prefer not to answer,I prefer not to answer,I prefer not to answer,I prefer not to answer,2024-08-22 06:39:58.58834
+8,2,Library_Loan_Records.csv,Exploratory Data Analysis (Summarize main characteristics of data),I prefer not to answer,I prefer not to answer,I prefer not to answer,I prefer not to answer,2024-08-25 18:19:35.571805
+4,2,train_2.csv,Understanding general trends (Exploratory Data Analysis),I prefer not to answer,I prefer not to answer,I prefer not to answer,I prefer not to answer,2024-07-07 10:43:58.380074
