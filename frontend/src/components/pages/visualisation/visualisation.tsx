@@ -5,6 +5,7 @@ import { Button, Grid } from "@mui/material";
 import ThumbUpIcon from "@mui/icons-material/ThumbUp";
 import ThumbDownIcon from "@mui/icons-material/ThumbDown";
 import { SApiService } from "../../services/app.service";
+import VegaEditorButton from "./vegaEditorButton";
 const Visualisation: FunctionComponent<{ vegaObject?: any[] }> = (props) => {
   const { vegaObject } = props;
   const userDetails = userDetailsStore((state) => state.userDetails);
@@ -63,6 +64,9 @@ const Visualisation: FunctionComponent<{ vegaObject?: any[] }> = (props) => {
                 style={{
                   textAlign: "center",
                   border: "1px solid grey",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
                 }}
               >
                 <Grid
@@ -96,8 +100,14 @@ const Visualisation: FunctionComponent<{ vegaObject?: any[] }> = (props) => {
                     </Button>
                   </Grid>
                 </Grid>
-
-                <VegaChart spec={vegaSpec} />
+                <Grid item style={{ flexGrow: 1 }}>
+                  <VegaChart spec={vegaSpec} />
+                </Grid>
+                {userDetails?.useCase === "To interact with and explore" && (
+                  <Grid item>
+                    <VegaEditorButton vegaSpec={vegaSpec} />
+                  </Grid>
+                )}
               </Grid>
             );
           })}

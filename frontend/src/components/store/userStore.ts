@@ -4,6 +4,7 @@ interface IUserDetails {
   password: string | undefined;
   userId?: number | undefined;
   dataProfileId?: number | undefined;
+  useCase?: string | undefined;
 }
 
 interface UserDetailsState {

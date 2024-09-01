@@ -83,6 +83,7 @@ const DataContextQuestionaire: FunctionComponent<IDataContextComponentProps> = (
             userDetailsStore.getState().setUserDetails({
               ...currentUserDetails,
               dataProfileId: res.dataProfileId,
+              useCase: dataProfileDict.usecase,
             });
           }
           setVegaObject && setVegaObject(res.vegaspec);

@@ -100,17 +100,40 @@ def find_matching_rule(questionnaire, data_profile, user_id, dataProfileId):
         if (
             objective
             == "Exploratory Data Analysis (Summarize main characteristics of data)"
+            or objective == "I’m not sure/Other"
+            or objective == "I prefer not to answer"
         ):
             rules = handleEDAObjective(
-                data_profile, objective, negative_feedback, positive_feedback, rules
+                data_profile, negative_feedback, positive_feedback, rules
             )
 
         else:
             mapped_data_types = map_data_types(data_profile["data_types"])
             rules = []
+            # Rules for objective
             condition = f"objective = {objective}"
-            rules_fetched = returnRulesFromDB(condition)
-            print(rules_fetched)
+            rules_objective = returnRulesFromDB(condition)
+            # Rules for patternsInterest
+            patternsInterest = (
+                "No"
+                if questionnaire["patternsinterest"] in ["No", "I prefer not to answer"]
+                else "Yes"
+            )
+
+            patternsCondition = f"patternsinterest = {patternsInterest}"
+            rules_patterns = returnRulesFromDB(patternsCondition)
+
+            # Rules for patternsInterest
+            groupcomparison = (
+                "No"
+                if questionnaire["groupcomparison"] in ["No", "I prefer not to answer"]
+                else "Yes"
+            )
+
+            groupComparison = f"groupcomparison = {groupcomparison}"
+            rules_groupComparison = returnRulesFromDB(groupComparison)
+
+            rules_fetched = rules_patterns + rules_groupComparison + rules_objective
             formattedRules = []
             for rule_fetched in rules_fetched:
                 formattedRule = responseParser(cursor.description, rule_fetched)
@@ -210,14 +233,12 @@ def combine_word_cloud_entries(data):
     return list(combined.values())
 
 
-def handleEDAObjective(
-    data_profile, objective, negative_feedback, positive_feedback, rules
-):
+def handleEDAObjective(data_profile, negative_feedback, positive_feedback, rules):
     # For EDA, we need the analysis of all the columns
     mapped_data_types = map_data_types_to_info_type(data_profile["data_types"])
     all_columns = [(col, category) for col, category in mapped_data_types.items()]
     all_columns = [(col, category) for col, category in mapped_data_types.items()]
-
+    objective = "Exploratory Data Analysis (Summarize main characteristics of data)"
     # Handle single columns
     for col, cat in all_columns:
         condition = f"objective = {objective}"
